@@ -1,71 +1,72 @@
 # WMU Student Data Update System
 
-A Flask web application that allows students to submit and update their information in the "MICHIGAN STUDENTS DATA" Excel worksheet. Data is automatically updated if the student name already exists (case-insensitive), or appended if it's a new student.
+A web application for updating student information in the "MICHIGAN STUDENTS DATA" Excel worksheet. The system uses a modern architecture with a static frontend hosted on GitHub Pages and a Flask backend API on Render.
+
+## Architecture
+
+- **Frontend**: Static HTML/CSS/JavaScript hosted on GitHub Pages
+- **Backend**: Flask REST API deployed on Render
+- **Database**: Excel file (WMU Stuedents Upgrade 1.xlsx)
 
 ## Features
 
 - ✅ Web form for data entry
-- ✅ Updates existing Excel file: `WMU Stuedents Upgrade 1.xlsx`
-- ✅ Works with "MICHIGAN STUDENTS DATA" worksheet
+- ✅ Updates existing Excel file automatically
 - ✅ Case-insensitive duplicate detection (by name)
 - ✅ Update existing records or append new ones
 - ✅ Auto-generates IDN for new students
-- ✅ Simple dark UI (black, grey, white, blue, orange)
+- ✅ CORS enabled for cross-origin requests
+- ✅ Modern dark UI design
 
-## Installation
+## Live Deployment
 
-### 1. Install Python Dependencies
+- **Frontend**: https://rfldn0.github.io/WMUStudentsUpdate/
+- **Backend API**: https://wmustudentsupdate.onrender.com
 
-```bash
-pip install Flask openpyxl
-```
+## Local Development
 
-Or use requirements.txt:
+### Prerequisites
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Run the Application
+### Run Backend Locally
 
 ```bash
 python main.py
 ```
 
-The server will start at `http://localhost:5000`
+The API server will start at `http://localhost:5000`
 
-## Usage
+### Test Locally
 
-### Web Interface
+To test with the local backend, update the API_URL in `docs/index.html`:
 
-1. Open your browser and go to `http://localhost:5000`
-2. Fill in the form:
-   - **Nama** (required) - Student's full name
-   - **Jurusan** - Major
-   - **University** - Default is "Western Michigan University"
-   - **Year** - Freshman, Sophomore, Junior, or Senior
-   - **Provinsi** - Province
-3. Click Submit
-4. If the student name exists (case-insensitive), their record will be updated
-5. If the student is new, a new row will be appended with auto-generated IDN
-
-### API Endpoint
-
-You can also submit data programmatically using the JSON API:
-
-```bash
-curl -X POST http://localhost:5000/api/submit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nama": "John Doe",
-    "jurusan": "Computer Science",
-    "university": "Western Michigan University",
-    "year": "Junior",
-    "provinsi": "Jakarta"
-  }'
+```javascript
+const API_URL = 'http://localhost:5000';
 ```
 
-Response:
+## API Endpoints
+
+### GET /
+Returns API information and available endpoints.
+
+### POST /submit
+Submit student data (accepts both form-data and JSON).
+
+**Request (JSON)**:
+```json
+{
+  "nama": "John Doe",
+  "jurusan": "Computer Science",
+  "university": "Western Michigan University",
+  "year": "Junior",
+  "provinsi": "Papua"
+}
+```
+
+**Response**:
 ```json
 {
   "status": "added",
@@ -76,14 +77,14 @@ Response:
     "jurusan": "Computer Science",
     "university": "Western Michigan University",
     "year": "Junior",
-    "provinsi": "Jakarta"
+    "provinsi": "Papua"
   }
 }
 ```
 
 ## Excel File Structure
 
-The application works with the following columns in the "MICHIGAN STUDENTS DATA" worksheet:
+The application works with these columns in the "MICHIGAN STUDENTS DATA" worksheet:
 
 | Column | Field      | Description                    |
 |--------|------------|--------------------------------|
@@ -94,74 +95,69 @@ The application works with the following columns in the "MICHIGAN STUDENTS DATA"
 | G      | Year       | Academic year                  |
 | H      | Provinsi   | Province                       |
 
-**Note**: Headers start at Row 3, Data starts at Row 4
+**Note**: Headers are in Row 3, data starts at Row 4
 
-## How Duplicate Detection Works
+## How It Works
 
-The system compares student names in a **case-insensitive** manner:
-- "John Doe" = "john doe" = "JOHN DOE" (all treated as the same person)
-- If a match is found, the existing record is updated (same IDN kept)
-- If no match is found, a new record is added with a new IDN
+1. **Duplicate Detection**: Compares student names (case-insensitive)
+   - "John Doe" = "john doe" = "JOHN DOE" (same person)
+   - If match found: updates existing record (keeps same IDN)
+   - If no match: adds new record with new IDN
 
-## Color Scheme
+2. **Cross-Origin Requests**: CORS enabled to allow GitHub Pages frontend to communicate with Render backend
 
-- Background: Black (#1a1a1a)
-- Container: Dark Grey (#2a2a2a)
-- Text: White/Light Grey
-- Primary Button: Blue (#2196F3)
-- Required Field: Orange (#FF9800)
-- Success: Green
-- Update: Orange
-- Error: Red
+3. **Data Persistence**: All changes are saved directly to the Excel file
 
 ## File Structure
 
 ```
 WMUStudentsUpdate/
-├── main.py                           # Flask application
-├── templates/
-│   └── index.html                   # Web form
+├── main.py                           # Flask API backend
+├── docs/
+│   └── index.html                   # Frontend (GitHub Pages)
 ├── requirements.txt                 # Python dependencies
 ├── README.md                        # This file
-├── WMU Stuedents Upgrade 1.xlsx    # Your Excel file
-└── inspect_excel.py                 # Helper script to view Excel structure
+├── .gitignore                       # Git ignore rules
+└── WMU Stuedents Upgrade 1.xlsx    # Excel database (not in git)
 ```
 
-## Deployment Options
+## Deployment
 
-### Option 1: Run Locally
-- Run `python main.py` on your machine
-- Access via `http://localhost:5000`
+### Backend (Render)
 
-### Option 2: Deploy to Cloud
-- **PythonAnywhere**: Upload files and configure web app
-- **Railway/Render**: Connect GitHub repo and deploy
-- **Heroku**: Add `Procfile` with `web: python main.py`
+1. Push code to GitHub
+2. Connect repository to Render
+3. Configure:
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn main:app`
 
-### Option 3: Use ngrok for Public URL
-```bash
-# Run the app
-python main.py
+### Frontend (GitHub Pages)
 
-# In another terminal
-ngrok http 5000
-```
+1. Go to repository Settings → Pages
+2. Source: Deploy from branch `main`
+3. Folder: `/docs`
+4. Save
 
-Then share the ngrok URL with students.
+## Security Notes
+
+- Excel file is excluded from git (.gitignore)
+- CORS is enabled for all origins (configure as needed)
+- Ensure Excel file exists on Render deployment
 
 ## Troubleshooting
 
-**Excel file permission error**: Close the Excel file if it's open
+**Excel file permission error**: Close Excel file if open
 
-**Port already in use**: Change the port number in main.py (last line)
+**CORS errors**: Ensure backend has flask-cors installed
 
-**Module not found**: Run `pip install Flask openpyxl`
+**Render deployment fails**: Check that gunicorn is in requirements.txt
 
-**Name not found when it should exist**: Check for extra spaces or special characters in the name
+**Name not found when it should exist**: Check for extra spaces or special characters
 
-## Notes
+## Dependencies
 
-- The Excel file must be closed when the application is writing to it
-- IDN numbers are auto-incremented based on the highest existing IDN
-- The application does NOT create a new Excel file - it uses the existing one
-- Make sure to backup your Excel file before testing
+- Flask 3.0.0
+- flask-cors 4.0.0
+- openpyxl 3.1.2
+- gunicorn 21.2.0
+- Werkzeug 3.0.1
