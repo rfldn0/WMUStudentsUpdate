@@ -1,0 +1,143 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    background: #2a2a2a;
+    padding: 40px;
+    border: 2px solid #3a3a3a;
+    max-width: 500px;
+    width: 100%;
+}
+
+h1 {
+    color: #ffffff;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 24px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #b0b0b0;
+    margin-bottom: 30px;
+    font-size: 13px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    color: #e0e0e0;
+    font-weight: 400;
+    font-size: 14px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #4a4a4a;
+    background: #1a1a1a;
+    color: #ffffff;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #2196F3;
+}
+
+select option {
+    background: #1a1a1a;
+    color: #ffffff;
+}
+
+.required {
+    color: #FF9800;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #1976D2;
+}
+
+button:active {
+    background: #1565C0;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.message {
+    padding: 12px;
+    margin-bottom: 20px;
+    display: none;
+    text-align: center;
+    font-size: 14px;
+    border: 1px solid;
+}
+
+.message.success {
+    background: #1b5e20;
+    color: #ffffff;
+    border-color: #2e7d32;
+}
+
+.message.updated {
+    background: #e65100;
+    color: #ffffff;
+    border-color: #FF9800;
+}
+
+.message.error {
+    background: #b71c1c;
+    color: #ffffff;
+    border-color: #d32f2f;
+}
+
+.message.show {
+    display: block;
+}
+
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
