@@ -8,10 +8,12 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # Configuration
 DYNAMODB_TABLE = 'wmu-students'
 REGION = 'us-east-1'
+TIMEZONE = ZoneInfo('America/Detroit')  # Eastern Time (Michigan)
 
 # Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb', region_name=REGION)
@@ -212,8 +214,8 @@ def add_student():
                 'university': university,
                 'year': year,
                 'provinsi': provinsi,
-                'created_at': datetime.now().isoformat(),
-                'updated_at': datetime.now().isoformat()
+                'created_at': datetime.now(TIMEZONE).isoformat(),
+                'updated_at': datetime.now(TIMEZONE).isoformat()
             }
         )
 

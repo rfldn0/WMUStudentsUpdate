@@ -5,6 +5,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from datetime import datetime
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
 CORS(app)
@@ -12,6 +13,7 @@ CORS(app)
 # Configuration
 DYNAMODB_TABLE = 'wmu-students'
 REGION = 'us-east-1'
+TIMEZONE = ZoneInfo('America/Detroit')  # Eastern Time (Michigan)
 
 # Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb', region_name=REGION)
@@ -128,7 +130,7 @@ def update_or_add_student(data):
                     ':u': university,
                     ':yr': year,
                     ':p': provinsi,
-                    ':ua': datetime.now().isoformat()
+                    ':ua': datetime.now(TIMEZONE).isoformat()
                 },
                 ExpressionAttributeNames={
                     '#y': 'year'  # 'year' is a reserved word in DynamoDB
@@ -155,8 +157,8 @@ def update_or_add_student(data):
                     'university': university,
                     'year': year,
                     'provinsi': provinsi,
-                    'created_at': datetime.now().isoformat(),
-                    'updated_at': datetime.now().isoformat()
+                    'created_at': datetime.now(TIMEZONE).isoformat(),
+                    'updated_at': datetime.now(TIMEZONE).isoformat()
                 }
             )
 
