@@ -10,7 +10,7 @@ WMUStudentsUpdate/
 │   ├── students.db                # SQLite database (56 students)
 │   └── __init__.py                # Python package marker
 │
-├── frontend/                       # Frontend (GitHub Pages)
+├── docs/                       # Frontend (GitHub Pages)
 │   └── index.html                 # Student submission form UI
 │
 ├── documentation/                  # All project documentation
@@ -55,7 +55,7 @@ WMUStudentsUpdate/
 - `GET /students` - List all students
 - `GET /students/<nama>` - Get specific student
 
-### frontend/
+### docs/
 
 | File | Purpose | Lines |
 |------|---------|-------|
@@ -86,7 +86,7 @@ These files were **deleted** as they're no longer needed:
 - ❌ `WMU Stuedents Upgrade 1.xlsx` - Original Excel file (migrated to SQLite)
 - ❌ `temp_excel.xlsx` - Temporary Excel file
 - ❌ `migrate_to_sqlite.py` - One-time migration script
-- ❌ `templates/` folder - Old template (replaced by frontend/)
+- ❌ `templates/` folder - Old template (replaced by docs/)
 - ❌ `CLEANUP_GUIDE.md` - Redundant documentation
 
 ---
@@ -123,7 +123,7 @@ requirements.txt
     ├─> gunicorn==21.2.0
     └─> zappa==0.59.0
 
-frontend/index.html
+docs/index.html
     └─> API_URL: https://qkfsddvd8j.execute-api.us-east-1.amazonaws.com/production
         └─> backend/main.py (Lambda function)
 ```
@@ -180,8 +180,8 @@ Thumbs.db
 - [ ] Test API endpoint with curl
 
 ### Deploying Frontend
-- [ ] Update `frontend/index.html` if needed
-- [ ] Commit: `git add frontend/index.html && git commit -m "Update frontend"`
+- [ ] Update `docs/index.html` if needed
+- [ ] Commit: `git add docs/index.html && git commit -m "Update frontend"`
 - [ ] Push: `git push`
 - [ ] Wait 1-2 minutes for GitHub Pages to update
 

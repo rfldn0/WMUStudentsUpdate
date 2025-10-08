@@ -108,7 +108,7 @@ zappa update production
 # Visit your frontend or test API directly
 
 # 5. If frontend changes, commit and push
-git add frontend/index.html
+git add docs/index.html
 git commit -m "Update frontend"
 git push
 ```
