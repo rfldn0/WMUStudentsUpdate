@@ -404,7 +404,7 @@ https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-group
 
 **Developer**: Victor Tabuni
 **GitHub**: @rfldn0
-**Email**: [Your email]
+**Email**: [tabunivictor58@gmail.com]
 **Repository**: https://github.com/rfldn0/WMUStudentsUpdate
 
 ---
