@@ -25,27 +25,47 @@ def decimal_to_int(obj):
 
 def find_student(nama):
     """
-    Find student by name (case-insensitive)
+    Find student by name using firstName + lastName matching
+    Priority: firstName + lastName match > exact match
+
+    Examples:
+    - Input "Jordy Rumayomi" matches "Jordy Alvian Rumayomi" (firstName=Jordy, lastName=Rumayomi)
+    - Input "Aprilia Mabel" matches "Aprilia Weni Irjani Mabel" (firstName=Aprilia, lastName=Mabel)
+
     Returns: student record or None
     """
     try:
-        # Scan table for matching name (case-insensitive)
-        response = table.scan(
-            FilterExpression=Attr('nama').eq(nama)
-        )
+        # Get all students
+        response = table.scan()
+        students = response['Items']
 
-        if response['Items']:
-            return response['Items'][0]
+        # Handle pagination
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+            students.extend(response['Items'])
 
-        # Try case-insensitive search
-        response = table.scan(
-            FilterExpression=Attr('nama').contains(nama)
-        )
+        # Extract firstName (first word) and lastName (last word) from input
+        nama_parts = nama.strip().split()
 
-        # Find exact match (case-insensitive)
-        for item in response['Items']:
-            if item['nama'].lower() == nama.lower():
-                return item
+        if len(nama_parts) >= 2:
+            input_first = nama_parts[0].lower()
+            input_last = nama_parts[-1].lower()
+
+            # PRIORITY 1: Check for firstName + lastName match
+            for student in students:
+                student_name_parts = student.get('nama', '').strip().split()
+                if len(student_name_parts) >= 2:
+                    student_first = student_name_parts[0].lower()
+                    student_last = student_name_parts[-1].lower()
+
+                    # Match if firstName AND lastName both match
+                    if student_first == input_first and student_last == input_last:
+                        return student
+
+        # PRIORITY 2: Fallback to exact match (case-insensitive)
+        for student in students:
+            if student.get('nama', '').lower() == nama.lower():
+                return student
 
         return None
 
@@ -96,8 +116,9 @@ def update_or_add_student(data):
 
     try:
         if existing:
-            # Update existing student
+            # Update existing student - KEEP the original full name from database
             idn = int(existing['idn'])
+            original_nama = existing.get('nama')  # Keep original full name
 
             table.update_item(
                 Key={'idn': idn},
@@ -114,10 +135,12 @@ def update_or_add_student(data):
                 }
             )
 
+            # Return response with ORIGINAL full name preserved
+            response_data['nama'] = original_nama  # Use database name, not input name
             response_data['idn'] = idn
             return {
                 'status': 'updated',
-                'message': f'Successfully updated record for {nama}',
+                'message': f'Successfully updated record for {original_nama}',
                 'data': response_data
             }
         else:

@@ -150,11 +150,19 @@ Change `s3_bucket` name in `zappa_settings.json` to something unique:
 "s3_bucket": "zappa-wmu-students-YOUR-NAME-HERE"
 ```
 
-### Database not found
-Make sure `students.db` exists in your project directory before deploying
+### DynamoDB Access Denied
+Lambda needs DynamoDB permissions. Add `AmazonDynamoDBFullAccess` policy to Lambda execution role:
+```bash
+aws iam attach-role-policy \
+  --role-name wmu-students-update-production-ZappaLambdaExecutionRole \
+  --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+```
 
 ### CORS errors
 Already configured in `main.py` with flask-cors
+
+### DynamoDB table not found
+Create the table first using `scripts/create_dynamodb_table.py` or see [DYNAMODB_MIGRATION.md](DYNAMODB_MIGRATION.md)
 
 ## Cost Estimate
 
@@ -162,15 +170,20 @@ Already configured in `main.py` with flask-cors
 - 1 million requests FREE
 - 400,000 GB-seconds of compute time FREE
 
-**For 100 students × 12 months = 1,200 requests/year:**
-- Cost: **$0.00** (well within free tier)
+**DynamoDB Free Tier (permanent):**
+- 25 GB storage FREE
+- 25 WCU/RCU FREE
+- On-demand: 2.5M reads + 1M writes/month FREE
 
 **API Gateway Free Tier (first 12 months):**
 - 1 million requests FREE
 
-**After 12 months:**
-- API Gateway: $3.50 per million requests
-- Your cost: ~$0.004/year (less than half a cent!)
+**For typical usage (100-200 requests/month):**
+- Lambda: **$0.00** (well within free tier)
+- DynamoDB: **$0.00** (well within free tier)
+- API Gateway: **~$0.05/year** (after first 12 months)
+
+**Total Cost: ~$0.05/year** (99% cheaper than traditional hosting!)
 
 ## Architecture
 
@@ -183,15 +196,16 @@ API Gateway (HTTPS)
     ↓
 AWS Lambda (main.py)
     ↓
-SQLite Database (bundled with Lambda)
+DynamoDB (wmu-students table)
 ```
 
 ## Notes
 
 - **Cold starts**: First request after inactivity may take 1-2 seconds
 - **Warm requests**: Subsequent requests are fast (<100ms)
-- **Database**: SQLite is bundled with the Lambda function
+- **Database**: DynamoDB (fully persistent, serverless)
 - **Scalability**: Handles up to 1,000 concurrent requests automatically
+- **Data persistence**: Unlike SQLite in /tmp, DynamoDB survives Lambda restarts
 
 ## Security Best Practices
 

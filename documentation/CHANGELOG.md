@@ -2,6 +2,51 @@
 
 All notable changes to WMU Student Data Update System will be documented in this file.
 
+## [2.2.0] - 2025-10-08
+
+### 🐛 Bug Fixes & Enhancements
+
+#### Fixed
+- **Smart Name Matching** - firstName + lastName duplicate detection
+  - "Aprilia Mabel" now correctly updates "Aprilia Weni Irjani Mabel"
+  - Prevents duplicate entries for same person with different name formats
+  - Preserves full legal names in database
+
+#### Added
+- **Graduated Students Tracking** - Count and list graduated vs current students
+  - Database Manager option #6: Count graduated students
+  - Classifies by year field (Freshman/Sophomore/Junior/Senior vs graduation semester)
+  - Shows breakdown and detailed list with graduation dates
+
+#### Changed
+- `find_student()` now prioritizes firstName + lastName matching over exact match
+- `update_or_add_student()` preserves original full name from database
+- Database Manager menu updated (1-10 options)
+
+---
+
+## [2.1.0] - 2025-10-08
+
+### 🗄️ DynamoDB Migration
+
+#### Added
+- **DynamoDB Integration** - Migrated from SQLite to fully persistent database
+- **Auto-formatting** - Names, majors, provinces auto-formatted to Title Case
+- **Database Manager CLI** - Interactive tool for data management
+- **Migration Scripts** - Automated SQLite to DynamoDB migration
+
+#### Changed
+- Database: SQLite in /tmp → DynamoDB (fully persistent)
+- 57 students migrated successfully
+- Documentation updated to reflect DynamoDB
+
+#### Benefits
+- ✅ Fully persistent (survives Lambda restarts)
+- ✅ Serverless and auto-scaling
+- ✅ Free tier: 25GB storage, 200M requests/month
+
+---
+
 ## [2.0.0] - 2025-10-08
 
 ### 🚀 Major Update: Migrated to AWS Lambda

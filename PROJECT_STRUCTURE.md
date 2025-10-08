@@ -5,34 +5,46 @@
 ```
 WMUStudentsUpdate/
 ├── backend/                        # Backend (Lambda + DynamoDB)
-│   ├── main.py                    # Flask API with auto-formatting
-│   ├── db_manager.py              # Database management tool
+│   ├── main.py                    # Flask API with smart name matching
+│   ├── db_manager.py              # Database management CLI (10 options)
 │   ├── students.db                # SQLite backup (deprecated)
 │   └── __init__.py
 ├── docs/                           # Frontend (GitHub Pages)
-│   └── index.html
+│   └── index.html                 # Student submission form
 ├── documentation/                  # All documentation
-│   ├── AWS_DEPLOYMENT.md
-│   ├── AWS_IMPLEMENTATION.md
-│   ├── CHANGELOG.md
-│   ├── DYNAMODB_MIGRATION.md
-│   └── NEXT_STEPS.md
+│   ├── AWS_DEPLOYMENT.md          # Deployment guide
+│   ├── AWS_IMPLEMENTATION.md      # Technical details
+│   ├── CHANGELOG.md               # Version history (v2.2.0)
+│   ├── DYNAMODB_MIGRATION.md      # DynamoDB migration guide
+│   └── NEXT_STEPS.md              # Maintenance guide
 ├── scripts/                        # Utility scripts
-│   ├── create_dynamodb_table.py
-│   ├── migrate_to_dynamodb.py
-│   └── test_db_write.py
-├── env/                            # Virtual environment (local)
-├── README.md
+│   ├── create_dynamodb_table.py   # Create DynamoDB table
+│   ├── migrate_to_dynamodb.py     # Migrate SQLite → DynamoDB
+│   └── test_db_write.py           # Test DynamoDB write
+├── env/                            # Virtual environment (local only)
+├── .gitignore                      # Git ignore rules
+├── README.md                       # Main documentation
 ├── PROJECT_STRUCTURE.md            # This file
-├── requirements.txt
-└── zappa_settings.json
+├── SUMMARY.md                      # Project summary
+├── requirements.txt                # Python dependencies
+└── zappa_settings.json             # AWS Lambda configuration
 ```
 
 ---
 
 ## 🎯 Key Features
 
-### Auto-Formatting (New!)
+### Smart Name Matching (v2.2.0)
+- **firstName + lastName matching** - Prevents duplicates
+- Example: "Aprilia Mabel" updates "Aprilia Weni Irjani Mabel"
+- Preserves full legal names in database
+
+### Graduated Students Tracking (v2.2.0)
+- Count current vs graduated students
+- Database Manager option #6
+- Classification: Freshman/Sophomore/Junior/Senior vs graduation semester
+
+### Auto-Formatting (v2.1.0)
 - **Names**: `victor tabuni` → `Victor Tabuni`
 - **Major**: `computer science` → `Computer Science`
 - **Province**: `papua barat` → `Papua Barat`
@@ -41,11 +53,18 @@ WMUStudentsUpdate/
 ```bash
 python backend/db_manager.py
 ```
-- View all students (table format)
-- Search by name
-- Count by major/province
-- Add/delete students
-- Export to CSV
+
+**Options:**
+1. View all students (table)
+2. Search by name
+3. Count total students
+4. Count by major
+5. Count by province
+6. Count graduated students ⭐ NEW
+7. Add student
+8. Delete student
+9. Export to CSV
+10. Exit
 
 ---
 
@@ -54,14 +73,16 @@ python backend/db_manager.py
 **Table**: `wmu-students` (us-east-1)
 **Billing**: Pay-per-request (on-demand)
 
-| Field | Type | Auto-Format |
-|-------|------|-------------|
-| idn | Number | - |
-| nama | String | ✅ Title Case |
-| jurusan | String | ✅ Title Case |
-| university | String | - |
-| year | String | - |
-| provinsi | String | ✅ Title Case |
+| Field | Type | Auto-Format | Description |
+|-------|------|-------------|-------------|
+| idn | Number | - | Primary key |
+| nama | String | ✅ Title Case | Full name (preserved) |
+| jurusan | String | ✅ Title Case | Major |
+| university | String | - | University name |
+| year | String | - | Year or graduation semester |
+| provinsi | String | ✅ Title Case | Province |
+| created_at | String | - | ISO timestamp |
+| updated_at | String | - | ISO timestamp |
 
 ---
 
@@ -69,18 +90,19 @@ python backend/db_manager.py
 
 ### Deploy
 ```bash
+.\env\Scripts\activate       # Activate environment
 zappa update production      # Update Lambda
 zappa tail production        # View logs
 ```
 
 ### Manage Database
 ```bash
-python backend/db_manager.py  # Interactive tool
+python backend/db_manager.py  # Interactive CLI tool
 ```
 
 ### Local Development
 ```bash
-python backend/main.py        # Run API locally
+python backend/main.py        # Run API locally (port 5000)
 ```
 
 ---
@@ -93,4 +115,4 @@ python backend/main.py        # Run API locally
 
 ---
 
-**Version**: 2.1 | **Status**: Production ✅
+**Version**: 2.2.0 | **Status**: Production ✅ | **Students**: 57+

@@ -1,4 +1,4 @@
-# WMU Student Data Update System
+# WMU Papuan Student Data Update System
 
 ``` save links:
 https://us-east-1.console.aws.amazon.com/singlesignon/home?region=us-east-1#/instances/7223ffcfae0b672b/dashboard
@@ -11,15 +11,16 @@ A modern serverless web application for managing Western Michigan University stu
 - **Frontend**: Static HTML/CSS/JavaScript → GitHub Pages
 - **Backend**: Flask REST API → AWS Lambda (Serverless)
 - **API Gateway**: RESTful endpoints with auto-scaling
-- **Database**: SQLite (bundled with Lambda function)
+- **Database**: AWS DynamoDB (Serverless, fully persistent)
 
 ## 📁 Project Structure
 
 ```
 WMUStudentsUpdate/
 ├── backend/                    # Backend API (AWS Lambda)
-│   ├── main.py                # Flask application
-│   ├── students.db            # SQLite database
+│   ├── main.py                # Flask application with DynamoDB
+│   ├── db_manager.py          # Database management CLI tool
+│   ├── students.db            # SQLite backup (deprecated)
 │   └── __init__.py            # Package marker
 ├── docs/                       # Frontend (GitHub Pages)
 │   └── index.html             # Student submission form
@@ -27,7 +28,12 @@ WMUStudentsUpdate/
 │   ├── AWS_DEPLOYMENT.md      # Deployment guide
 │   ├── AWS_IMPLEMENTATION.md  # Technical details
 │   ├── CHANGELOG.md           # Version history
+│   ├── DYNAMODB_MIGRATION.md  # DynamoDB migration guide
 │   └── NEXT_STEPS.md          # Maintenance guide
+├── scripts/                    # Utility scripts
+│   ├── create_dynamodb_table.py
+│   ├── migrate_to_dynamodb.py
+│   └── test_db_write.py
 ├── env/                        # Virtual environment (local only)
 ├── requirements.txt            # Python dependencies
 ├── zappa_settings.json         # AWS Lambda configuration
@@ -66,8 +72,8 @@ Returns API information and statistics
 ```json
 {
   "message": "WMU Student Update API",
-  "database": "SQLite",
-  "total_students": 56,
+  "database": "DynamoDB",
+  "total_students": 58,
   "frontend": "https://rfldn0.github.io/WMUStudentsUpdate/",
   "endpoints": { ... }
 }
@@ -106,21 +112,21 @@ List all students (ordered by name)
 ### GET /students/<nama>
 Get specific student by name (case-insensitive)
 
-## 🗄️ Database Schema
+## 🗄️ Database Schema (DynamoDB)
 
-```sql
-CREATE TABLE students (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    idn INTEGER UNIQUE,
-    nama TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    jurusan TEXT,
-    university TEXT,
-    year TEXT,
-    provinsi TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+**Table**: `wmu-students` (us-east-1)
+**Billing**: Pay-per-request (on-demand)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `idn` | Number | Primary key, unique student ID |
+| `nama` | String | Student name (auto-formatted to Title Case) |
+| `jurusan` | String | Major/field of study (auto-formatted) |
+| `university` | String | University name |
+| `year` | String | Academic year or graduation semester |
+| `provinsi` | String | Province/region (auto-formatted) |
+| `created_at` | String | ISO timestamp |
+| `updated_at` | String | ISO timestamp |
 
 ## 💻 Local Development
 
@@ -212,8 +218,13 @@ python backend/db_manager.py
 - View all students in formatted table
 - Search students by name
 - Count by major/province
+- Count graduated students (vs current students)
 - Add/delete students
 - Export to CSV
+
+**Student Classification:**
+- **Current Students**: Freshman, Sophomore, Junior, Senior
+- **Graduated Students**: Graduation semester format (e.g., "FALL 2025", "SPRING 2026")
 
 ## 📚 Documentation
 
@@ -224,13 +235,13 @@ python backend/db_manager.py
 
 ## 🛠️ Troubleshooting
 
-**Database not found**: Ensure `backend/students.db` exists in deployment
+**DynamoDB connection errors**: Verify AWS credentials and IAM permissions for DynamoDB
 
 **CORS errors**: Check CORS configuration in `backend/main.py`
 
 **GitHub Pages not updating**: Change folder to `/docs` in Settings → Pages
 
-**Duplicate student error**: Name already exists (case-insensitive match)
+**Duplicate student detection**: Uses firstName + lastName matching (e.g., "John Doe" matches "John Middle Doe")
 
 **Lambda deployment fails**: Verify Python 3.12 virtual environment is active
 
@@ -238,14 +249,17 @@ python backend/db_manager.py
 
 **View logs**: Run `zappa tail production` to see real-time Lambda logs
 
+**DynamoDB permissions**: Lambda needs `AmazonDynamoDBFullAccess` policy attached
+
 ## 🔐 Security & Best Practices
 
-- ✅ Database excluded from version control
+- ✅ Serverless architecture (no exposed servers)
 - ✅ CORS enabled for authorized domains
-- ✅ SQL injection protection (parameterized queries)
-- ✅ Case-insensitive unique constraints
-- ✅ Input validation and sanitization
+- ✅ DynamoDB parameterized queries (no injection vulnerabilities)
+- ✅ Smart duplicate detection (firstName + lastName matching)
+- ✅ Input validation and auto-formatting
 - ✅ AWS IAM roles for least privilege access
+- ✅ HTTPS-only via API Gateway
 
 ## 🤝 Contributing
 

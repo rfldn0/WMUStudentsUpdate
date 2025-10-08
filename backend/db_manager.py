@@ -136,6 +136,50 @@ def count_by_province():
     except ClientError as e:
         print(f"[ERROR] {e}")
 
+def count_graduated_students():
+    """Count graduated students (those with semester graduation format like 'FALL 2025')"""
+    try:
+        response = table.scan()
+        students = response['Items']
+
+        # Handle pagination
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+            students.extend(response['Items'])
+
+        # Define current student year options
+        current_student_years = ['Freshman', 'Sophomore', 'Junior', 'Senior', '']
+
+        # Count graduated vs current students
+        graduated = []
+        current_students = []
+
+        for student in students:
+            year = student.get('year', '').strip()
+
+            # Check if it's a graduated student (not in current student years)
+            if year and year not in current_student_years:
+                graduated.append(student)
+            else:
+                current_students.append(student)
+
+        print("\n=== STUDENT STATUS BREAKDOWN ===")
+        print(f"Total Students: {len(students)}")
+        print(f"Graduated Students: {len(graduated)}")
+        print(f"Current Students: {len(current_students)}")
+
+        if graduated:
+            print("\n=== GRADUATED STUDENTS ===")
+            print(f"{'IDN':<6} {'NAME':<30} {'GRADUATION':<20}")
+            print("="*60)
+            for student in sorted(graduated, key=lambda x: x.get('year', '')):
+                print(f"{int(student['idn']):<6} "
+                      f"{student.get('nama', 'N/A'):<30} "
+                      f"{student.get('year', 'N/A'):<20}")
+
+    except ClientError as e:
+        print(f"[ERROR] {e}")
+
 def add_student():
     """Add new student interactively"""
     print("\n=== ADD NEW STUDENT ===")
@@ -257,13 +301,14 @@ def menu():
         print("3.  Count total students")
         print("4.  Count by major")
         print("5.  Count by province")
-        print("6.  Add new student")
-        print("7.  Delete student")
-        print("8.  Export to CSV")
-        print("9.  Exit")
+        print("6.  Count graduated students")
+        print("7.  Add new student")
+        print("8.  Delete student")
+        print("9.  Export to CSV")
+        print("10. Exit")
         print("="*60)
 
-        choice = input("\nSelect option (1-9): ").strip()
+        choice = input("\nSelect option (1-10): ").strip()
 
         if choice == '1':
             view_all_students()
@@ -277,12 +322,14 @@ def menu():
         elif choice == '5':
             count_by_province()
         elif choice == '6':
-            add_student()
+            count_graduated_students()
         elif choice == '7':
-            delete_student()
+            add_student()
         elif choice == '8':
-            export_to_csv()
+            delete_student()
         elif choice == '9':
+            export_to_csv()
+        elif choice == '10':
             print("\nGoodbye!")
             break
         else:

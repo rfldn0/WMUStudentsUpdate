@@ -45,6 +45,12 @@ zappa_settings.json.bak
 *_backup.py
 *_old.md
 
+# Temporary/test files
+test_*.py
+delete_duplicate.py
+*BUGFIX*.md
+*FEATURE_UPDATE*.md
+
 # Flask
 instance/
 .webassets-cache
