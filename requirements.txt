@@ -3,3 +3,4 @@ flask-cors==4.0.0
 Werkzeug==3.0.1
 gunicorn==21.2.0
 zappa==0.59.0
+boto3>=1.26.0

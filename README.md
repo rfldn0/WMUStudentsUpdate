@@ -1,5 +1,9 @@
 # WMU Student Data Update System
 
+``` save links:
+https://us-east-1.console.aws.amazon.com/singlesignon/home?region=us-east-1#/instances/7223ffcfae0b672b/dashboard
+```
+
 A modern serverless web application for managing Western Michigan University student information. Built with AWS Lambda, API Gateway, and GitHub Pages.
 
 ## 🏗️ Architecture
