@@ -1,21 +1,22 @@
 # WMU Student Data Update System
 
-A web application for updating student information in the "MICHIGAN STUDENTS DATA" Excel worksheet. The system uses a modern architecture with a static frontend hosted on GitHub Pages and a Flask backend API on Render.
+A modern web application for managing Western Michigan University student information. Built with a decoupled architecture featuring a static frontend on GitHub Pages and a Flask REST API backend on Render, using SQLite for data persistence.
 
 ## Architecture
 
-- **Frontend**: Static HTML/CSS/JavaScript hosted on GitHub Pages
-- **Backend**: Flask REST API deployed on Render
-- **Database**: Excel file (WMU Stuedents Upgrade 1.xlsx)
+- **Frontend**: Static HTML/CSS/JavaScript → GitHub Pages
+- **Backend**: Flask REST API → Render
+- **Database**: SQLite (lightweight, serverless, perfect for <100 students)
 
 ## Features
 
-- ✅ Web form for data entry
-- ✅ Updates existing Excel file automatically
-- ✅ Case-insensitive duplicate detection (by name)
-- ✅ Update existing records or append new ones
-- ✅ Auto-generates IDN for new students
+- ✅ Clean web form for data entry
+- ✅ SQLite database for fast, reliable storage
+- ✅ Case-insensitive duplicate detection
+- ✅ Auto-generates unique student IDN
+- ✅ Update existing or add new students
 - ✅ CORS enabled for cross-origin requests
+- ✅ RESTful API with multiple endpoints
 - ✅ Modern dark UI design
 
 ## Live Deployment
@@ -23,39 +24,26 @@ A web application for updating student information in the "MICHIGAN STUDENTS DAT
 - **Frontend**: https://rfldn0.github.io/WMUStudentsUpdate/
 - **Backend API**: https://wmustudentsupdate.onrender.com
 
-## Local Development
-
-### Prerequisites
-
-```bash
-pip install -r requirements.txt
-```
-
-### Run Backend Locally
-
-```bash
-python main.py
-```
-
-The API server will start at `http://localhost:5000`
-
-### Test Locally
-
-To test with the local backend, update the API_URL in `docs/index.html`:
-
-```javascript
-const API_URL = 'http://localhost:5000';
-```
-
 ## API Endpoints
 
 ### GET /
-Returns API information and available endpoints.
+Returns API information and statistics
+
+**Response:**
+```json
+{
+  "message": "WMU Student Update API",
+  "database": "SQLite",
+  "total_students": 56,
+  "frontend": "https://rfldn0.github.io/WMUStudentsUpdate/",
+  "endpoints": { ... }
+}
+```
 
 ### POST /submit
-Submit student data (accepts both form-data and JSON).
+Submit or update student data (accepts form-data or JSON)
 
-**Request (JSON)**:
+**Request:**
 ```json
 {
   "nama": "John Doe",
@@ -66,13 +54,13 @@ Submit student data (accepts both form-data and JSON).
 }
 ```
 
-**Response**:
+**Response (New Student):**
 ```json
 {
   "status": "added",
   "message": "Successfully added new record for John Doe",
   "data": {
-    "idn": 61,
+    "idn": 57,
     "nama": "John Doe",
     "jurusan": "Computer Science",
     "university": "Western Michigan University",
@@ -82,82 +70,168 @@ Submit student data (accepts both form-data and JSON).
 }
 ```
 
-## Excel File Structure
-
-The application works with these columns in the "MICHIGAN STUDENTS DATA" worksheet:
-
-| Column | Field      | Description                    |
-|--------|------------|--------------------------------|
-| C      | IDN        | Auto-generated student ID      |
-| D      | Nama       | Student name (used for lookup) |
-| E      | Jurusan    | Major                          |
-| F      | University | University name                |
-| G      | Year       | Academic year                  |
-| H      | Provinsi   | Province                       |
-
-**Note**: Headers are in Row 3, data starts at Row 4
-
-## How It Works
-
-1. **Duplicate Detection**: Compares student names (case-insensitive)
-   - "John Doe" = "john doe" = "JOHN DOE" (same person)
-   - If match found: updates existing record (keeps same IDN)
-   - If no match: adds new record with new IDN
-
-2. **Cross-Origin Requests**: CORS enabled to allow GitHub Pages frontend to communicate with Render backend
-
-3. **Data Persistence**: All changes are saved directly to the Excel file
-
-## File Structure
-
+**Response (Existing Student):**
+```json
+{
+  "status": "updated",
+  "message": "Successfully updated record for John Doe",
+  "data": { ... }
+}
 ```
-WMUStudentsUpdate/
-├── main.py                           # Flask API backend
-├── docs/
-│   └── index.html                   # Frontend (GitHub Pages)
-├── requirements.txt                 # Python dependencies
-├── README.md                        # This file
-├── .gitignore                       # Git ignore rules
-└── WMU Stuedents Upgrade 1.xlsx    # Excel database (not in git)
+
+### GET /students
+List all students (ordered by name)
+
+**Response:**
+```json
+{
+  "status": "success",
+  "count": 56,
+  "data": [ ... ]
+}
+```
+
+### GET /students/<nama>
+Get specific student by name (case-insensitive)
+
+## Database Schema
+
+```sql
+CREATE TABLE students (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    idn INTEGER UNIQUE,
+    nama TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    jurusan TEXT,
+    university TEXT,
+    year TEXT,
+    provinsi TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Local Development
+
+### Prerequisites
+
+```bash
+pip install -r requirements.txt
+```
+
+### Run Backend
+
+```bash
+python main.py
+```
+
+Server starts at `http://localhost:5000`
+
+### Database Setup
+
+The `students.db` file contains all student data. To recreate from Excel:
+
+1. Download Excel file from SharePoint
+2. Run migration script:
+```bash
+python migrate_to_sqlite.py
 ```
 
 ## Deployment
 
 ### Backend (Render)
 
-1. Push code to GitHub
-2. Connect repository to Render
-3. Configure:
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn main:app`
+1. **Push code to GitHub**
+2. **Connect to Render**
+3. **Configure Build Settings:**
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn main:app`
+
+4. **Upload Database:**
+   - Go to Render Dashboard → Shell
+   - Upload `students.db` using Render's file upload
+   - Or use `scp` if you have SSH access
 
 ### Frontend (GitHub Pages)
 
-1. Go to repository Settings → Pages
+1. Go to Settings → Pages
 2. Source: Deploy from branch `main`
 3. Folder: `/docs`
 4. Save
 
-## Security Notes
+Your frontend will be live at: `https://YOUR_USERNAME.github.io/WMUStudentsUpdate/`
 
-- Excel file is excluded from git (.gitignore)
-- CORS is enabled for all origins (configure as needed)
-- Ensure Excel file exists on Render deployment
+## File Structure
 
-## Troubleshooting
+```
+WMUStudentsUpdate/
+├── main.py                    # Flask API (SQLite backend)
+├── docs/
+│   └── index.html            # Static frontend
+├── requirements.txt          # Python dependencies
+├── README.md                 # This file
+├── .gitignore               # Git ignore rules
+├── students.db              # SQLite database (not in git)
+└── migrate_to_sqlite.py     # Excel → SQLite migration script
+```
 
-**Excel file permission error**: Close Excel file if open
+## How It Works
 
-**CORS errors**: Ensure backend has flask-cors installed
+1. **User submits form** on GitHub Pages
+2. **Frontend sends POST** request to Render API
+3. **Backend checks** if student name exists (case-insensitive)
+4. **Database updates** existing record or inserts new one
+5. **API responds** with success/error message
+6. **Frontend displays** result to user
 
-**Render deployment fails**: Check that gunicorn is in requirements.txt
+## Data Migration from Excel
 
-**Name not found when it should exist**: Check for extra spaces or special characters
+The original data was migrated from a SharePoint Excel file to SQLite:
+
+- 56 students successfully migrated
+- IDN numbers preserved from original data
+- Timestamps added for created_at/updated_at tracking
+
+## Security & Best Practices
+
+- ✅ Database excluded from version control
+- ✅ CORS enabled for authorized domains
+- ✅ SQL injection protection (parameterized queries)
+- ✅ Case-insensitive unique constraints
+- ✅ Input validation and sanitization
 
 ## Dependencies
 
-- Flask 3.0.0
-- flask-cors 4.0.0
-- openpyxl 3.1.2
-- gunicorn 21.2.0
-- Werkzeug 3.0.1
+```
+Flask==3.0.0
+flask-cors==4.0.0
+Werkzeug==3.0.1
+gunicorn==21.2.0
+```
+
+SQLite is included with Python (no installation needed)
+
+## Troubleshooting
+
+**Database not found**: Upload `students.db` to Render server
+
+**CORS errors**: Check backend CORS configuration
+
+**Duplicate student error**: Name already exists (case-insensitive match)
+
+**Render build fails**: Verify `requirements.txt` is correct
+
+## Contributing
+
+1. Clone the repository
+2. Make changes
+3. Test locally
+4. Push to GitHub
+5. Render auto-deploys from main branch
+
+## License
+
+MIT License - Feel free to use for educational purposes
+
+---
+
+**Built with ❤️ for Western Michigan University Indonesian Students**

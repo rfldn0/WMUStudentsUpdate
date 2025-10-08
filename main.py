@@ -1,57 +1,47 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openpyxl import load_workbook
+import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
 
 # Configuration
-EXCEL_FILE = 'WMU Stuedents Upgrade 1.xlsx'
-SHEET_NAME = 'MICHIGAN STUDENTS DATA'
-DATA_START_ROW = 4  # First data row after headers
-NAMA_COLUMN = 4
-IDN_COLUMN = 3
-JURUSAN_COLUMN = 5
-UNIVERSITY_COLUMN = 6
-YEAR_COLUMN = 7
-PROVINSI_COLUMN = 8
+DB_FILE = 'students.db'
 
-def open_workbook():
-    """Open and return workbook and worksheet"""
-    wb = load_workbook(EXCEL_FILE)
-    ws = wb[SHEET_NAME]
-    return wb, ws
+def get_db_connection():
+    """Create database connection"""
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
+    return conn
 
-def find_student(ws, nama):
+def find_student(nama):
     """
     Find student by name (case-insensitive)
-    Returns: row_number or None
+    Returns: student record or None
     """
-    nama_lower = nama.lower().strip()
-    for idx in range(DATA_START_ROW, ws.max_row + 1):
-        cell_value = ws.cell(row=idx, column=NAMA_COLUMN).value
-        if cell_value and cell_value.lower().strip() == nama_lower:
-            return idx
-    return None
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-def get_next_idn(ws):
+    cursor.execute(
+        'SELECT * FROM students WHERE LOWER(nama) = LOWER(?)',
+        (nama.strip(),)
+    )
+    student = cursor.fetchone()
+    conn.close()
+
+    return dict(student) if student else None
+
+def get_next_idn():
     """Get the next IDN number"""
-    max_idn = 0
-    for idx in range(DATA_START_ROW, ws.max_row + 1):
-        idn_value = ws.cell(row=idx, column=IDN_COLUMN).value
-        if idn_value and isinstance(idn_value, (int, float)):
-            max_idn = max(max_idn, int(idn_value))
-    return max_idn + 1
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-def save_student_data(ws, row_num, nama, jurusan, university, year, provinsi, idn=None):
-    """Save student data to specified row"""
-    if idn:
-        ws.cell(row=row_num, column=IDN_COLUMN, value=idn)
-    ws.cell(row=row_num, column=NAMA_COLUMN, value=nama)
-    ws.cell(row=row_num, column=JURUSAN_COLUMN, value=jurusan)
-    ws.cell(row=row_num, column=UNIVERSITY_COLUMN, value=university)
-    ws.cell(row=row_num, column=YEAR_COLUMN, value=year)
-    ws.cell(row=row_num, column=PROVINSI_COLUMN, value=provinsi)
+    cursor.execute('SELECT MAX(idn) FROM students')
+    max_idn = cursor.fetchone()[0]
+    conn.close()
+
+    return (max_idn or 0) + 1
 
 def update_or_add_student(data):
     """Update existing student or add new one"""
@@ -64,8 +54,11 @@ def update_or_add_student(data):
     if not nama:
         return {'status': 'error', 'message': 'Nama is required'}
 
-    wb, ws = open_workbook()
-    row_num = find_student(ws, nama)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if student exists
+    existing = find_student(nama)
 
     response_data = {
         'nama': nama,
@@ -75,41 +68,102 @@ def update_or_add_student(data):
         'provinsi': provinsi
     }
 
-    if row_num:
-        # Update existing student
-        save_student_data(ws, row_num, nama, jurusan, university, year, provinsi)
-        wb.save(EXCEL_FILE)
-        wb.close()
-        return {
-            'status': 'updated',
-            'message': f'Successfully updated record for {nama}',
-            'data': response_data
-        }
-    else:
-        # Add new student
-        new_row = ws.max_row + 1
-        idn = get_next_idn(ws)
-        save_student_data(ws, new_row, nama, jurusan, university, year, provinsi, idn)
-        wb.save(EXCEL_FILE)
-        wb.close()
-        response_data['idn'] = idn
-        return {
-            'status': 'added',
-            'message': f'Successfully added new record for {nama}',
-            'data': response_data
-        }
+    try:
+        if existing:
+            # Update existing student
+            cursor.execute('''
+                UPDATE students
+                SET jurusan = ?, university = ?, year = ?, provinsi = ?, updated_at = ?
+                WHERE LOWER(nama) = LOWER(?)
+            ''', (jurusan, university, year, provinsi, datetime.now(), nama))
+
+            conn.commit()
+            conn.close()
+
+            response_data['idn'] = existing['idn']
+            return {
+                'status': 'updated',
+                'message': f'Successfully updated record for {nama}',
+                'data': response_data
+            }
+        else:
+            # Add new student
+            idn = get_next_idn()
+
+            cursor.execute('''
+                INSERT INTO students (idn, nama, jurusan, university, year, provinsi)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (idn, nama, jurusan, university, year, provinsi))
+
+            conn.commit()
+            conn.close()
+
+            response_data['idn'] = idn
+            return {
+                'status': 'added',
+                'message': f'Successfully added new record for {nama}',
+                'data': response_data
+            }
+    except sqlite3.IntegrityError as e:
+        conn.close()
+        return {'status': 'error', 'message': f'Database error: {str(e)}'}
+    except Exception as e:
+        conn.close()
+        return {'status': 'error', 'message': f'Error: {str(e)}'}
 
 @app.route('/')
 def index():
-    """Root endpoint - redirects to GitHub Pages"""
+    """Root endpoint - API information"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM students')
+    total = cursor.fetchone()[0]
+    conn.close()
+
     return jsonify({
         'message': 'WMU Student Update API',
+        'database': 'SQLite',
+        'total_students': total,
         'frontend': 'https://rfldn0.github.io/WMUStudentsUpdate/',
         'endpoints': {
-            '/submit': 'POST - Submit student data (form-data)',
-            '/api/submit': 'POST - Submit student data (JSON)'
+            '/submit': 'POST - Submit student data (form-data or JSON)',
+            '/api/submit': 'POST - Submit student data (alias)',
+            '/students': 'GET - List all students',
+            '/students/<nama>': 'GET - Get student by name'
         }
     })
+
+@app.route('/students', methods=['GET'])
+def list_students():
+    """List all students"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM students ORDER BY nama')
+    students = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    return jsonify({
+        'status': 'success',
+        'count': len(students),
+        'data': students
+    })
+
+@app.route('/students/<nama>', methods=['GET'])
+def get_student(nama):
+    """Get student by name"""
+    student = find_student(nama)
+
+    if student:
+        return jsonify({
+            'status': 'success',
+            'data': student
+        })
+    else:
+        return jsonify({
+            'status': 'error',
+            'message': 'Student not found'
+        }), 404
 
 @app.route('/submit', methods=['POST'])
 @app.route('/api/submit', methods=['POST'])

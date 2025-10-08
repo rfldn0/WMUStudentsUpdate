@@ -23,9 +23,16 @@ wheels/
 .installed.cfg
 *.egg
 
-# Excel files (optional - remove this line if you want to commit the Excel file)
-students_data.xlsx
-WMU Stuedents Upgrade 1.xlsx
+# Excel files
+*.xlsx
+temp_excel.xlsx
+
+# SQLite database (exclude from git, upload separately to Render)
+students.db
+*.db
+
+# Migration script (only needed for initial setup)
+migrate_to_sqlite.py
 
 # Flask
 instance/
