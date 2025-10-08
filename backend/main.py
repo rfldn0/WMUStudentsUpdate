@@ -73,11 +73,12 @@ def get_next_idn():
 
 def update_or_add_student(data):
     """Update existing student or add new one"""
-    nama = data.get('nama', '').strip()
-    jurusan = data.get('jurusan', '').strip()
+    # Auto-format names to Title Case (Victor Tabuni, Computer Science)
+    nama = data.get('nama', '').strip().title()
+    jurusan = data.get('jurusan', '').strip().title()
     university = data.get('university', '').strip()
     year = data.get('year', '').strip()
-    provinsi = data.get('provinsi', '').strip()
+    provinsi = data.get('provinsi', '').strip().title()
 
     if not nama:
         return {'status': 'error', 'message': 'Nama is required'}

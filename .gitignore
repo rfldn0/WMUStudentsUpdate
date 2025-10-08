@@ -23,23 +23,27 @@ wheels/
 .installed.cfg
 *.egg
 
-# Excel files
-*.xlsx
-temp_excel.xlsx
-
-# SQLite database (exclude from git, bundled with Lambda deployment)
-students.db
+# Database files (DynamoDB is in AWS, SQLite is deprecated)
 *.db
+students.db
 
-# Migration script (only needed for initial setup, can be deleted)
-migrate_to_sqlite.py
+# Excel files (original data, already migrated)
+*.xlsx
+
+# CSV exports from db_manager
+*.csv
+students_export_*.csv
 
 # Zappa deployment files
 .zappa_settings.json.bak
 zappa_settings.json.bak
 
-# AWS
+# AWS credentials
 .aws/
+
+# Backup files
+*_backup.py
+*_old.md
 
 # Flask
 instance/

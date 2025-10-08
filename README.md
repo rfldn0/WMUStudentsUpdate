@@ -45,7 +45,9 @@ WMUStudentsUpdate/
 ## ✨ Features
 
 - ✅ Clean web form for data entry
-- ✅ SQLite database for fast, reliable storage
+- ✅ **DynamoDB** - Fully persistent serverless database
+- ✅ **Auto-formatting** - Names/majors auto-formatted to Title Case
+- ✅ **Database Manager** - Interactive CLI tool for data management
 - ✅ Case-insensitive duplicate detection
 - ✅ Auto-generates unique student IDN
 - ✅ Update existing or add new students
@@ -53,6 +55,7 @@ WMUStudentsUpdate/
 - ✅ RESTful API with multiple endpoints
 - ✅ Modern dark UI design
 - ✅ Serverless auto-scaling
+- ✅ Export to CSV functionality
 
 ## 📡 API Endpoints
 
@@ -194,9 +197,23 @@ flask-cors==4.0.0
 Werkzeug==3.0.1
 gunicorn==21.2.0
 zappa==0.59.0
+boto3>=1.26.0
 ```
 
-SQLite is included with Python (no installation needed)
+## 🛠️ Database Manager
+
+Interactive CLI tool for managing DynamoDB data:
+
+```bash
+python backend/db_manager.py
+```
+
+**Features:**
+- View all students in formatted table
+- Search students by name
+- Count by major/province
+- Add/delete students
+- Export to CSV
 
 ## 📚 Documentation
 
