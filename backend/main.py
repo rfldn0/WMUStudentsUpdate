@@ -1,13 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
+import os
 from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
 
 # Configuration
-DB_FILE = 'students.db'
+DB_FILE = os.path.join(os.path.dirname(__file__), 'students.db')
 
 def get_db_connection():
     """Create database connection"""

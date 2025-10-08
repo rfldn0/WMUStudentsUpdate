@@ -1,14 +1,44 @@
 # WMU Student Data Update System
 
-A modern web application for managing Western Michigan University student information. Built with a decoupled architecture featuring a static frontend on GitHub Pages and a Flask REST API backend on Render, using SQLite for data persistence.
+A modern serverless web application for managing Western Michigan University student information. Built with AWS Lambda, API Gateway, and GitHub Pages.
 
-## Architecture
+## 🏗️ Architecture
 
 - **Frontend**: Static HTML/CSS/JavaScript → GitHub Pages
-- **Backend**: Flask REST API → Render
-- **Database**: SQLite (lightweight, serverless, perfect for <100 students)
+- **Backend**: Flask REST API → AWS Lambda (Serverless)
+- **API Gateway**: RESTful endpoints with auto-scaling
+- **Database**: SQLite (bundled with Lambda function)
 
-## Features
+## 📁 Project Structure
+
+```
+WMUStudentsUpdate/
+├── backend/                    # Backend API (AWS Lambda)
+│   ├── main.py                # Flask application
+│   ├── students.db            # SQLite database
+│   └── __init__.py            # Package marker
+├── frontend/                   # Frontend (GitHub Pages)
+│   └── index.html             # Student submission form
+├── documentation/              # Project documentation
+│   ├── AWS_DEPLOYMENT.md      # Deployment guide
+│   ├── AWS_IMPLEMENTATION.md  # Technical details
+│   ├── CHANGELOG.md           # Version history
+│   └── NEXT_STEPS.md          # Maintenance guide
+├── env/                        # Virtual environment (local only)
+├── requirements.txt            # Python dependencies
+├── zappa_settings.json         # AWS Lambda configuration
+├── .gitignore                  # Git ignore rules
+└── README.md                   # This file
+```
+
+## 🚀 Live Deployment
+
+- **Frontend**: https://rfldn0.github.io/WMUStudentsUpdate/
+- **Backend API**: https://qkfsddvd8j.execute-api.us-east-1.amazonaws.com/production
+- **Platform**: AWS Lambda + API Gateway (Serverless)
+- **Cost**: ~$0.05/year (99% savings vs traditional hosting)
+
+## ✨ Features
 
 - ✅ Clean web form for data entry
 - ✅ SQLite database for fast, reliable storage
@@ -18,13 +48,9 @@ A modern web application for managing Western Michigan University student inform
 - ✅ CORS enabled for cross-origin requests
 - ✅ RESTful API with multiple endpoints
 - ✅ Modern dark UI design
+- ✅ Serverless auto-scaling
 
-## Live Deployment
-
-- **Frontend**: https://rfldn0.github.io/WMUStudentsUpdate/
-- **Backend API**: https://wmustudentsupdate.onrender.com
-
-## API Endpoints
+## 📡 API Endpoints
 
 ### GET /
 Returns API information and statistics
@@ -54,7 +80,7 @@ Submit or update student data (accepts form-data or JSON)
 }
 ```
 
-**Response (New Student):**
+**Response:**
 ```json
 {
   "status": "added",
@@ -62,39 +88,18 @@ Submit or update student data (accepts form-data or JSON)
   "data": {
     "idn": 57,
     "nama": "John Doe",
-    "jurusan": "Computer Science",
-    "university": "Western Michigan University",
-    "year": "Junior",
-    "provinsi": "Papua"
+    ...
   }
-}
-```
-
-**Response (Existing Student):**
-```json
-{
-  "status": "updated",
-  "message": "Successfully updated record for John Doe",
-  "data": { ... }
 }
 ```
 
 ### GET /students
 List all students (ordered by name)
 
-**Response:**
-```json
-{
-  "status": "success",
-  "count": 56,
-  "data": [ ... ]
-}
-```
-
 ### GET /students/<nama>
 Get specific student by name (case-insensitive)
 
-## Database Schema
+## 🗄️ Database Schema
 
 ```sql
 CREATE TABLE students (
@@ -110,128 +115,132 @@ CREATE TABLE students (
 );
 ```
 
-## Local Development
+## 💻 Local Development
 
 ### Prerequisites
 
 ```bash
+# Python 3.12 required
+python --version  # Should be 3.12.x
+
+# Create virtual environment
+py -3.12 -m venv env
+
+# Activate environment
+.\env\Scripts\activate  # Windows
+source env/bin/activate  # Linux/Mac
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Run Backend
+### Run Backend Locally
 
 ```bash
-python main.py
+# Activate virtual environment
+.\env\Scripts\activate
+
+# Run Flask app
+python backend/main.py
+
+# Server starts at http://localhost:5000
 ```
 
-Server starts at `http://localhost:5000`
+## 🚀 Deployment
 
-### Database Setup
+### Backend (AWS Lambda)
 
-The `students.db` file contains all student data. To recreate from Excel:
+See [documentation/AWS_DEPLOYMENT.md](documentation/AWS_DEPLOYMENT.md) for detailed guide.
 
-1. Download Excel file from SharePoint
-2. Run migration script:
+**Quick Deploy:**
 ```bash
-python migrate_to_sqlite.py
+# Activate virtual environment (Python 3.12)
+.\env\Scripts\activate
+
+# Deploy to AWS Lambda
+zappa deploy production
+
+# For updates
+zappa update production
+
+# View logs
+zappa tail production
 ```
 
-## Deployment
-
-### Backend (Render)
-
-1. **Push code to GitHub**
-2. **Connect to Render**
-3. **Configure Build Settings:**
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn main:app`
-
-4. **Upload Database:**
-   - Go to Render Dashboard → Shell
-   - Upload `students.db` using Render's file upload
-   - Or use `scp` if you have SSH access
+**Requirements:**
+- AWS account
+- AWS CLI configured
+- Python 3.12 virtual environment
+- Zappa installed
 
 ### Frontend (GitHub Pages)
 
 1. Go to Settings → Pages
 2. Source: Deploy from branch `main`
-3. Folder: `/docs`
+3. Folder: `/frontend`
 4. Save
 
 Your frontend will be live at: `https://YOUR_USERNAME.github.io/WMUStudentsUpdate/`
 
-## File Structure
-
-```
-WMUStudentsUpdate/
-├── main.py                    # Flask API (SQLite backend)
-├── docs/
-│   └── index.html            # Static frontend
-├── requirements.txt          # Python dependencies
-├── README.md                 # This file
-├── .gitignore               # Git ignore rules
-├── students.db              # SQLite database (not in git)
-└── migrate_to_sqlite.py     # Excel → SQLite migration script
-```
-
-## How It Works
-
-1. **User submits form** on GitHub Pages
-2. **Frontend sends POST** request to Render API
-3. **Backend checks** if student name exists (case-insensitive)
-4. **Database updates** existing record or inserts new one
-5. **API responds** with success/error message
-6. **Frontend displays** result to user
-
-## Data Migration from Excel
-
-The original data was migrated from a SharePoint Excel file to SQLite:
-
-- 56 students successfully migrated
-- IDN numbers preserved from original data
-- Timestamps added for created_at/updated_at tracking
-
-## Security & Best Practices
-
-- ✅ Database excluded from version control
-- ✅ CORS enabled for authorized domains
-- ✅ SQL injection protection (parameterized queries)
-- ✅ Case-insensitive unique constraints
-- ✅ Input validation and sanitization
-
-## Dependencies
+## 📦 Dependencies
 
 ```
 Flask==3.0.0
 flask-cors==4.0.0
 Werkzeug==3.0.1
 gunicorn==21.2.0
+zappa==0.59.0
 ```
 
 SQLite is included with Python (no installation needed)
 
-## Troubleshooting
+## 📚 Documentation
 
-**Database not found**: Upload `students.db` to Render server
+- **[AWS_DEPLOYMENT.md](documentation/AWS_DEPLOYMENT.md)** - Step-by-step deployment guide
+- **[AWS_IMPLEMENTATION.md](documentation/AWS_IMPLEMENTATION.md)** - Technical implementation details
+- **[CHANGELOG.md](documentation/CHANGELOG.md)** - Version history and updates
+- **[NEXT_STEPS.md](documentation/NEXT_STEPS.md)** - Maintenance and troubleshooting guide
 
-**CORS errors**: Check backend CORS configuration
+## 🛠️ Troubleshooting
+
+**Database not found**: Ensure `backend/students.db` exists in deployment
+
+**CORS errors**: Check CORS configuration in `backend/main.py`
 
 **Duplicate student error**: Name already exists (case-insensitive match)
 
-**Render build fails**: Verify `requirements.txt` is correct
+**Lambda deployment fails**: Verify Python 3.12 virtual environment is active
 
-## Contributing
+**Cold starts**: First request after inactivity may take 1-2 seconds (normal for serverless)
+
+**View logs**: Run `zappa tail production` to see real-time Lambda logs
+
+## 🔐 Security & Best Practices
+
+- ✅ Database excluded from version control
+- ✅ CORS enabled for authorized domains
+- ✅ SQL injection protection (parameterized queries)
+- ✅ Case-insensitive unique constraints
+- ✅ Input validation and sanitization
+- ✅ AWS IAM roles for least privilege access
+
+## 🤝 Contributing
 
 1. Clone the repository
-2. Make changes
-3. Test locally
-4. Push to GitHub
-5. Render auto-deploys from main branch
+2. Create a feature branch
+3. Make changes
+4. Test locally
+5. Update Lambda: `zappa update production`
+6. Push to GitHub
 
-## License
+## 📄 License
 
 MIT License - Feel free to use for educational purposes
 
 ---
 
 **Built with ❤️ for Western Michigan University Indonesian Students**
+
+**Deployed on**: AWS Lambda (Serverless)
+**Maintained by**: Victor Tabuni (rfldn0)
+**Repository**: https://github.com/rfldn0/WMUStudentsUpdate

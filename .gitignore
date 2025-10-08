@@ -27,12 +27,19 @@ wheels/
 *.xlsx
 temp_excel.xlsx
 
-# SQLite database (exclude from git, upload separately to Render)
+# SQLite database (exclude from git, bundled with Lambda deployment)
 students.db
 *.db
 
-# Migration script (only needed for initial setup)
+# Migration script (only needed for initial setup, can be deleted)
 migrate_to_sqlite.py
+
+# Zappa deployment files
+.zappa_settings.json.bak
+zappa_settings.json.bak
+
+# AWS
+.aws/
 
 # Flask
 instance/
