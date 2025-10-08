@@ -1,65 +1,60 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openpyxl import load_workbook
-import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
 # Configuration
 EXCEL_FILE = 'WMU Stuedents Upgrade 1.xlsx'
 SHEET_NAME = 'MICHIGAN STUDENTS DATA'
-HEADER_ROW = 3  # The actual headers are in row 3
+DATA_START_ROW = 4  # First data row after headers
+NAMA_COLUMN = 4
+IDN_COLUMN = 3
+JURUSAN_COLUMN = 5
+UNIVERSITY_COLUMN = 6
+YEAR_COLUMN = 7
+PROVINSI_COLUMN = 8
 
-def find_student(nama):
+def open_workbook():
+    """Open and return workbook and worksheet"""
+    wb = load_workbook(EXCEL_FILE)
+    ws = wb[SHEET_NAME]
+    return wb, ws
+
+def find_student(ws, nama):
     """
     Find student by name (case-insensitive)
-    Returns tuple: (row_number, exists)
-    Column C (index 2) contains 'IDN'
-    Column D (index 3) contains 'Nama'
+    Returns: row_number or None
     """
-    wb = load_workbook(EXCEL_FILE)
-    ws = wb[SHEET_NAME]
-
     nama_lower = nama.lower().strip()
-
-    # Start from row 4 (first data row after header in row 3)
-    for idx in range(4, ws.max_row + 1):
-        cell_value = ws.cell(row=idx, column=4).value  # Column D (Nama)
+    for idx in range(DATA_START_ROW, ws.max_row + 1):
+        cell_value = ws.cell(row=idx, column=NAMA_COLUMN).value
         if cell_value and cell_value.lower().strip() == nama_lower:
-            wb.close()
-            return idx, True
+            return idx
+    return None
 
-    wb.close()
-    return None, False
-
-def get_next_idn():
+def get_next_idn(ws):
     """Get the next IDN number"""
-    wb = load_workbook(EXCEL_FILE)
-    ws = wb[SHEET_NAME]
-
     max_idn = 0
-    # Start from row 4 (first data row)
-    for idx in range(4, ws.max_row + 1):
-        idn_value = ws.cell(row=idx, column=3).value  # Column C (IDN)
+    for idx in range(DATA_START_ROW, ws.max_row + 1):
+        idn_value = ws.cell(row=idx, column=IDN_COLUMN).value
         if idn_value and isinstance(idn_value, (int, float)):
             max_idn = max(max_idn, int(idn_value))
-
-    wb.close()
     return max_idn + 1
 
+def save_student_data(ws, row_num, nama, jurusan, university, year, provinsi, idn=None):
+    """Save student data to specified row"""
+    if idn:
+        ws.cell(row=row_num, column=IDN_COLUMN, value=idn)
+    ws.cell(row=row_num, column=NAMA_COLUMN, value=nama)
+    ws.cell(row=row_num, column=JURUSAN_COLUMN, value=jurusan)
+    ws.cell(row=row_num, column=UNIVERSITY_COLUMN, value=university)
+    ws.cell(row=row_num, column=YEAR_COLUMN, value=year)
+    ws.cell(row=row_num, column=PROVINSI_COLUMN, value=provinsi)
+
 def update_or_add_student(data):
-    """
-    Update existing student or add new one
-    Returns: dict with status and message
-    Column mapping:
-    C (3) = IDN
-    D (4) = Nama
-    E (5) = Jurusan
-    F (6) = University
-    G (7) = Year
-    H (8) = Provinsi
-    """
+    """Update existing student or add new one"""
     nama = data.get('nama', '').strip()
     jurusan = data.get('jurusan', '').strip()
     university = data.get('university', '').strip()
@@ -69,84 +64,60 @@ def update_or_add_student(data):
     if not nama:
         return {'status': 'error', 'message': 'Nama is required'}
 
-    row_num, exists = find_student(nama)
-    wb = load_workbook(EXCEL_FILE)
-    ws = wb[SHEET_NAME]
+    wb, ws = open_workbook()
+    row_num = find_student(ws, nama)
 
-    if exists:
-        # Update existing row (columns C through H)
-        ws.cell(row=row_num, column=4, value=nama)  # Nama
-        ws.cell(row=row_num, column=5, value=jurusan)  # Jurusan
-        ws.cell(row=row_num, column=6, value=university)  # University
-        ws.cell(row=row_num, column=7, value=year)  # Year
-        ws.cell(row=row_num, column=8, value=provinsi)  # Provinsi
+    response_data = {
+        'nama': nama,
+        'jurusan': jurusan,
+        'university': university,
+        'year': year,
+        'provinsi': provinsi
+    }
 
+    if row_num:
+        # Update existing student
+        save_student_data(ws, row_num, nama, jurusan, university, year, provinsi)
         wb.save(EXCEL_FILE)
         wb.close()
         return {
             'status': 'updated',
             'message': f'Successfully updated record for {nama}',
-            'data': {
-                'nama': nama,
-                'jurusan': jurusan,
-                'university': university,
-                'year': year,
-                'provinsi': provinsi
-            }
+            'data': response_data
         }
     else:
-        # Add new row at the end
+        # Add new student
         new_row = ws.max_row + 1
-        idn = get_next_idn()
-
-        ws.cell(row=new_row, column=3, value=idn)  # IDN
-        ws.cell(row=new_row, column=4, value=nama)  # Nama
-        ws.cell(row=new_row, column=5, value=jurusan)  # Jurusan
-        ws.cell(row=new_row, column=6, value=university)  # University
-        ws.cell(row=new_row, column=7, value=year)  # Year
-        ws.cell(row=new_row, column=8, value=provinsi)  # Provinsi
-
+        idn = get_next_idn(ws)
+        save_student_data(ws, new_row, nama, jurusan, university, year, provinsi, idn)
         wb.save(EXCEL_FILE)
         wb.close()
+        response_data['idn'] = idn
         return {
             'status': 'added',
             'message': f'Successfully added new record for {nama}',
-            'data': {
-                'idn': idn,
-                'nama': nama,
-                'jurusan': jurusan,
-                'university': university,
-                'year': year,
-                'provinsi': provinsi
-            }
+            'data': response_data
         }
 
 @app.route('/')
 def index():
-    """Render the input form"""
-    return render_template('index.html')
+    """Root endpoint - redirects to GitHub Pages"""
+    return jsonify({
+        'message': 'WMU Student Update API',
+        'frontend': 'https://rfldn0.github.io/WMUStudentsUpdate/',
+        'endpoints': {
+            '/submit': 'POST - Submit student data (form-data)',
+            '/api/submit': 'POST - Submit student data (JSON)'
+        }
+    })
 
 @app.route('/submit', methods=['POST'])
-def submit():
-    """Handle form submission"""
-    try:
-        data = request.form.to_dict()
-        print(f"Received data: {data}")  # Debug log
-        result = update_or_add_student(data)
-        print(f"Result: {result}")  # Debug log
-        return jsonify(result)
-    except Exception as e:
-        import traceback
-        error_msg = str(e)
-        print(f"Error occurred: {error_msg}")  # Debug log
-        traceback.print_exc()  # Print full traceback
-        return jsonify({'status': 'error', 'message': error_msg}), 500
-
 @app.route('/api/submit', methods=['POST'])
-def api_submit():
-    """API endpoint for JSON submissions"""
+def submit():
+    """Handle form and JSON submissions"""
     try:
-        data = request.get_json()
+        # Accept both form-data and JSON
+        data = request.get_json() if request.is_json else request.form.to_dict()
         result = update_or_add_student(data)
         return jsonify(result)
     except Exception as e:
