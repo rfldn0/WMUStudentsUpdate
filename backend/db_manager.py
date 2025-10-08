@@ -241,7 +241,7 @@ def delete_student():
 
         confirm = input("Are you sure you want to delete? (yes/no): ")
 
-        if confirm.lower() == 'yes':
+        if confirm.lower() == 'yes' or confirm.lower() == 'y':
             table.delete_item(Key={'idn': idn})
             print(f"[SUCCESS] Deleted student IDN {idn}")
         else:
@@ -312,30 +312,31 @@ def menu():
 
         choice = input("\nSelect option (1-10): ").strip()
 
-        if choice == '1':
-            view_all_students()
-        elif choice == '2':
-            name = input("Enter student name (or part of it): ")
-            search_student(name)
-        elif choice == '3':
-            count_students()
-        elif choice == '4':
-            count_by_major()
-        elif choice == '5':
-            count_by_province()
-        elif choice == '6':
-            count_graduated_students()
-        elif choice == '7':
-            add_student()
-        elif choice == '8':
-            delete_student()
-        elif choice == '9':
-            export_to_csv()
-        elif choice == '10':
-            print("\nGoodbye!")
-            break
-        else:
-            print("[ERROR] Invalid option")
+        match choice: 
+            case '1':
+                view_all_students()
+            case  '2':
+                name = input("Enter student name (or part of it): ")
+                search_student(name)
+            case  '3':
+                count_students()
+            case  '4':
+                count_by_major()
+            case  '5':
+                count_by_province()
+            case  '6':
+                count_graduated_students()
+            case  '7':
+                add_student()
+            case  '8':
+                delete_student()
+            case  '9':
+                export_to_csv()
+            case  '10':
+                print("\nGoodbye!")
+                break
+            case _:
+                print("[ERROR] Invalid option")
 
 if __name__ == '__main__':
     menu()
