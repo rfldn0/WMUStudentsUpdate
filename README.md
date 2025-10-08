@@ -17,7 +17,7 @@ WMUStudentsUpdate/
 │   ├── main.py                # Flask application
 │   ├── students.db            # SQLite database
 │   └── __init__.py            # Package marker
-├── frontend/                   # Frontend (GitHub Pages)
+├── docs/                       # Frontend (GitHub Pages)
 │   └── index.html             # Student submission form
 ├── documentation/              # Project documentation
 │   ├── AWS_DEPLOYMENT.md      # Deployment guide
@@ -177,7 +177,7 @@ zappa tail production
 
 1. Go to Settings → Pages
 2. Source: Deploy from branch `main`
-3. Folder: `/frontend`
+3. Folder: `/docs`
 4. Save
 
 Your frontend will be live at: `https://YOUR_USERNAME.github.io/WMUStudentsUpdate/`
@@ -206,6 +206,8 @@ SQLite is included with Python (no installation needed)
 **Database not found**: Ensure `backend/students.db` exists in deployment
 
 **CORS errors**: Check CORS configuration in `backend/main.py`
+
+**GitHub Pages not updating**: Change folder to `/docs` in Settings → Pages
 
 **Duplicate student error**: Name already exists (case-insensitive match)
 
