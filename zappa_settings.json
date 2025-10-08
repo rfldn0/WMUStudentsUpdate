@@ -1,0 +1,22 @@
+{
+    "production": {
+        "app_function": "main.app",
+        "aws_region": "us-east-1",
+        "project_name": "wmu-students-update",
+        "runtime": "python3.9",
+        "s3_bucket": "zappa-wmu-students-update",
+        "keep_warm": false,
+        "exclude": [
+            "*.xlsx",
+            "temp_excel.xlsx",
+            "migrate_to_sqlite.py",
+            ".git/*",
+            ".gitignore",
+            "README.md",
+            "__pycache__/*"
+        ],
+        "include": [
+            "students.db"
+        ]
+    }
+}
