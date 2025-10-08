@@ -1,8 +1,10 @@
 from flask import Flask, request, render_template, jsonify
+from flask_cors import CORS
 from openpyxl import load_workbook
 import os
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Configuration
 EXCEL_FILE = 'WMU Stuedents Upgrade 1.xlsx'

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WMU Student Data Update</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #2a2a2a;
+            padding: 40px;
+            border: 2px solid #3a3a3a;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #b0b0b0;
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #e0e0e0;
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #4a4a4a;
+            background: #1a1a1a;
+            color: #ffffff;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        select option {
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .required {
+            color: #FF9800;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+
+        button:active {
+            background: #1565C0;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 12px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+            font-size: 14px;
+            border: 1px solid;
+        }
+
+        .message.success {
+            background: #1b5e20;
+            color: #ffffff;
+            border-color: #2e7d32;
+        }
+
+        .message.updated {
+            background: #e65100;
+            color: #ffffff;
+            border-color: #FF9800;
+        }
+
+        .message.error {
+            background: #b71c1c;
+            color: #ffffff;
+            border-color: #d32f2f;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WMU Student Data Update</h1>
+        <p class="subtitle">Enter your information below. Existing records will be updated.</p>
+
+        <div id="message" class="message"></div>
+
+        <form id="studentForm">
+            <div class="form-group">
+                <label for="nama">Nama <span class="required">*</span></label>
+                <input type="text" id="nama" name="nama" required>
+            </div>
+
+            <div class="form-group">
+                <label for="jurusan">Jurusan</label>
+                <input type="text" id="jurusan" name="jurusan">
+            </div>
+
+            <div class="form-group">
+                <label for="university">University</label>
+                <input type="text" id="university" name="university" value="Western Michigan University">
+            </div>
+
+            <div class="form-group">
+                <label for="year">Year or Graduation Semester</label>
+                <select id="yearSelect" onchange="toggleYearInput()">
+                    <option value="">Select Option</option>
+                    <option value="Freshman">Freshman</option>
+                    <option value="Sophomore">Sophomore</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Senior">Senior</option>
+                    <option value="custom">Graduating (Custom Semester)</option>
+                </select>
+                <input type="text" id="yearCustom" name="year" placeholder="e.g., SPRING 2026" style="display: none; margin-top: 10px;">
+            </div>
+
+            <div class="form-group">
+                <label for="provinsi">Provinsi</label>
+                <select id="provinsi" name="provinsi">
+                    <option value="">Select Provinsi</option>
+                    <option value="Papua">Papua</option>
+                    <option value="Papua Selatan">Papua Selatan</option>
+                    <option value="Papua Barat">Papua Barat</option>
+                    <option value="Papua Barat Daya">Papua Barat Daya</option>
+                    <option value="Papua Tengah">Papua Tengah</option>
+                    <option value="Papua Pegunungan">Papua Pegunungan</option>
+                </select>
+            </div>
+
+            <button type="submit" id="submitBtn">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('studentForm');
+        const messageDiv = document.getElementById('message');
+        const submitBtn = document.getElementById('submitBtn');
+        const yearSelect = document.getElementById('yearSelect');
+        const yearCustom = document.getElementById('yearCustom');
+
+        // Backend API URL (Render)
+        const API_URL = 'https://wmustudentsupdate.onrender.com';
+
+        // Toggle between dropdown and custom input for year
+        function toggleYearInput() {
+            if (yearSelect.value === 'custom') {
+                yearCustom.style.display = 'block';
+                yearCustom.required = true;
+                yearCustom.value = '';
+            } else {
+                yearCustom.style.display = 'none';
+                yearCustom.required = false;
+                yearCustom.value = yearSelect.value;
+            }
+        }
+
+        // Auto-capitalize yearCustom input
+        yearCustom.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+
+        // Initialize year field on page load
+        toggleYearInput();
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Submitting...';
+
+            const formData = new FormData(form);
+
+            // Make sure year is set correctly
+            if (yearSelect.value !== 'custom') {
+                formData.set('year', yearSelect.value);
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/submit`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                // Show message
+                messageDiv.className = 'message show';
+
+                if (result.status === 'added') {
+                    messageDiv.classList.add('success');
+                    messageDiv.textContent = result.message;
+                    form.reset(); // Clear form for new entry
+                    // Restore default university value
+                    document.getElementById('university').value = 'Western Michigan University';
+                    toggleYearInput(); // Reset year field
+                } else if (result.status === 'updated') {
+                    messageDiv.classList.add('updated');
+                    messageDiv.textContent = result.message;
+                } else {
+                    messageDiv.classList.add('error');
+                    messageDiv.textContent = result.message;
+                }
+
+                // Hide message after 5 seconds
+                setTimeout(() => {
+                    messageDiv.className = 'message';
+                }, 5000);
+
+            } catch (error) {
+                messageDiv.className = 'message show error';
+                messageDiv.textContent = 'An error occurred. Please try again.';
+                console.error('Error:', error);
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            }
+        });
+    </script>
+</body>
+</html>
