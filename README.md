@@ -125,8 +125,8 @@ Get specific student by name (case-insensitive)
 | `university` | String | University name |
 | `year` | String | Academic year or graduation semester |
 | `provinsi` | String | Province/region (auto-formatted) |
-| `created_at` | String | ISO timestamp |
-| `updated_at` | String | ISO timestamp |
+| `created_at` | String | ISO timestamp with timezone (Eastern Time) |
+| `updated_at` | String | ISO timestamp with timezone (Eastern Time) |
 
 ## 💻 Local Development
 
@@ -204,6 +204,7 @@ Werkzeug==3.0.1
 gunicorn==21.2.0
 zappa==0.59.0
 boto3>=1.26.0
+tzdata>=2024.1
 ```
 
 ## 🛠️ Database Manager

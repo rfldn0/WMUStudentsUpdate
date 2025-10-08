@@ -164,6 +164,9 @@ Already configured in `main.py` with flask-cors
 ### DynamoDB table not found
 Create the table first using `scripts/create_dynamodb_table.py` or see [DYNAMODB_MIGRATION.md](DYNAMODB_MIGRATION.md)
 
+### Timezone issues with timestamps
+Timestamps are automatically set to Eastern Time (America/Detroit). The `tzdata` package is required for Windows and is included in requirements.txt
+
 ## Cost Estimate
 
 **AWS Lambda Free Tier (every month):**

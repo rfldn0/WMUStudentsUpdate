@@ -54,5 +54,5 @@ Complete documentation for WMU Papuan Student Data Update System.
 
 ---
 
-**Version:** 2.2.0
+**Version:** 2.3.0 (DynamoDB + Timezone Fix)
 **Last Updated:** October 8, 2025

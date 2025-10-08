@@ -5,16 +5,16 @@
 ```
 WMUStudentsUpdate/
 ├── backend/                        # Backend (Lambda + DynamoDB)
-│   ├── main.py                    # Flask API with smart name matching
+│   ├── main.py                    # Flask API with smart name matching + timezone
 │   ├── db_manager.py              # Database management CLI (10 options)
-│   ├── students.db                # SQLite backup (deprecated)
 │   └── __init__.py
 ├── docs/                           # Frontend (GitHub Pages)
 │   └── index.html                 # Student submission form
 ├── documentation/                  # All documentation
+│   ├── README.md                  # Documentation index
 │   ├── AWS_DEPLOYMENT.md          # Deployment guide
 │   ├── AWS_IMPLEMENTATION.md      # Technical details
-│   ├── CHANGELOG.md               # Version history (v2.2.0)
+│   ├── CHANGELOG.md               # Version history (v2.3.0)
 │   ├── DYNAMODB_MIGRATION.md      # DynamoDB migration guide
 │   └── NEXT_STEPS.md              # Maintenance guide
 ├── scripts/                        # Utility scripts
@@ -24,15 +24,20 @@ WMUStudentsUpdate/
 ├── env/                            # Virtual environment (local only)
 ├── .gitignore                      # Git ignore rules
 ├── README.md                       # Main documentation
-├── PROJECT_STRUCTURE.md            # This file
-├── SUMMARY.md                      # Project summary
-├── requirements.txt                # Python dependencies
+├── PROJECT_STRUCTURE.md            # This file (quick reference)
+├── requirements.txt                # Python dependencies (incl. tzdata)
 └── zappa_settings.json             # AWS Lambda configuration
 ```
 
 ---
 
 ## 🎯 Key Features
+
+### Timezone Fix (v2.3.0) ⭐ NEW
+- **Eastern Time (America/Detroit)** - Timestamps match Michigan local time
+- **Automatic DST handling** - No manual timezone adjustments needed
+- **ISO 8601 with offset** - e.g., `2025-10-08T08:00:00-04:00`
+- Fixes 4-5 hour UTC offset issue
 
 ### Smart Name Matching (v2.2.0)
 - **firstName + lastName matching** - Prevents duplicates
@@ -81,8 +86,8 @@ python backend/db_manager.py
 | university | String | - | University name |
 | year | String | - | Year or graduation semester |
 | provinsi | String | ✅ Title Case | Province |
-| created_at | String | - | ISO timestamp |
-| updated_at | String | - | ISO timestamp |
+| created_at | String | - | ISO timestamp with timezone (EDT/EST) |
+| updated_at | String | - | ISO timestamp with timezone (EDT/EST) |
 
 ---
 
@@ -115,4 +120,4 @@ python backend/main.py        # Run API locally (port 5000)
 
 ---
 
-**Version**: 2.2.0 | **Status**: Production ✅ | **Students**: 57+
+**Version**: 2.3.0 | **Status**: Production ✅ | **Students**: 58+

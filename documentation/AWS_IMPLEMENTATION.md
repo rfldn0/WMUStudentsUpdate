@@ -43,13 +43,14 @@
 │  - Business logic                                            │
 │  - Database operations                                       │
 └────────────────────────┬────────────────────────────────────┘
-                         │ Read/Write
+                         │ Read/Write (boto3)
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   SQLITE DATABASE                            │
-│  File: students.db (bundled in Lambda package)               │
-│  - Student records                                           │
-│  - Read-only in production (Lambda filesystem limitation)    │
+│                   AWS DYNAMODB                               │
+│  Table: wmu-students (us-east-1)                             │
+│  - Serverless NoSQL database                                 │
+│  - Fully persistent, auto-scaling                            │
+│  - Pay-per-request billing mode                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -90,6 +91,7 @@
   - CloudWatch Logs write access
   - S3 bucket access
   - API Gateway invocation
+  - DynamoDB full access (for wmu-students table)
 
 ---
 
@@ -99,23 +101,20 @@
 ```json
 {
     "production": {
-        "app_function": "main.app",
+        "app_function": "backend.main.app",
         "aws_region": "us-east-1",
         "project_name": "wmu-students-update",
         "runtime": "python3.12",
         "s3_bucket": "zappa-wmu-students-rfldn0-2025",
         "keep_warm": false,
         "exclude": [
-            "*.xlsx",
-            "temp_excel.xlsx",
-            "migrate_to_sqlite.py",
+            "docs/*",
+            "documentation/*",
+            "env/*",
             ".git/*",
             ".gitignore",
             "README.md",
             "__pycache__/*"
-        ],
-        "include": [
-            "students.db"
         ]
     }
 }
@@ -123,32 +122,31 @@
 
 ### Key Configuration Details
 
-**`app_function`**: Points to Flask app object in main.py
+**`app_function`**: Points to Flask app object in backend/main.py
 **`aws_region`**: us-east-1 (N. Virginia) - lowest latency for most users
 **`runtime`**: python3.12 - Latest supported Python version on Lambda
 **`s3_bucket`**: Unique bucket name for deployment packages
 **`keep_warm`**: false - No scheduled pings (saves cost, accepts cold starts)
 **`exclude`**: Files not needed in production (reduces package size)
-**`include`**: Explicitly bundle students.db database
 
 ---
 
 ## Application Code
 
-### main.py (Flask Application)
+### backend/main.py (Flask Application)
 
 **Key Functions**:
-- `get_db_connection()` - SQLite connection handler
-- `find_student(nama)` - Case-insensitive student lookup
-- `get_next_idn()` - Auto-generate unique student ID
-- `update_or_add_student(data)` - Main business logic
+- `find_student(nama)` - firstName + lastName matching with case-insensitive fallback
+- `get_next_idn()` - Auto-generate unique student ID from DynamoDB
+- `update_or_add_student(data)` - Main business logic with auto-formatting
+- `decimal_to_int(obj)` - Convert DynamoDB Decimal to int for JSON serialization
 
 **API Endpoints**:
 - `GET /` - API information and statistics
 - `POST /submit` - Submit or update student data
 - `POST /api/submit` - Alias for /submit
-- `GET /students` - List all students
-- `GET /students/<nama>` - Get specific student
+- `GET /students` - List all students (sorted by name)
+- `GET /students/<nama>` - Get specific student by name
 
 **CORS Configuration**:
 ```python
@@ -156,34 +154,43 @@ from flask_cors import CORS
 CORS(app)  # Allows requests from GitHub Pages
 ```
 
+**Timezone Configuration**:
+```python
+from zoneinfo import ZoneInfo
+TIMEZONE = ZoneInfo('America/Detroit')  # Eastern Time (Michigan)
+```
+
 ---
 
 ## Database
 
-### Schema
-```sql
-CREATE TABLE students (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    idn INTEGER UNIQUE,
-    nama TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    jurusan TEXT,
-    university TEXT,
-    year TEXT,
-    provinsi TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### DynamoDB Table Schema
+
+**Table Name**: `wmu-students`
+**Region**: us-east-1
+**Billing Mode**: Pay-per-request (on-demand)
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `idn` | Number | Primary key (partition key) |
+| `nama` | String | Student name (auto-formatted to Title Case) |
+| `jurusan` | String | Major/field of study (auto-formatted) |
+| `university` | String | University name |
+| `year` | String | Academic year or graduation semester |
+| `provinsi` | String | Province/region (auto-formatted) |
+| `created_at` | String | ISO 8601 timestamp with timezone (Eastern Time) |
+| `updated_at` | String | ISO 8601 timestamp with timezone (Eastern Time) |
 
 ### Current Data
-- **Total Students**: 56 (migrated from Excel)
-- **File Size**: ~20 KB
-- **Location**: Bundled in Lambda deployment package
+- **Total Students**: 58+ (migrated from SQLite)
+- **Storage**: Serverless, fully persistent
+- **Backup**: Point-in-time recovery available (optional)
 
-### Limitations
-- **Read-only in Lambda**: Lambda filesystem is read-only except /tmp
-- **Current workaround**: Database bundled in package (writes update /tmp copy)
-- **Future solution**: Migrate to DynamoDB or RDS for production writes
+### Benefits
+- ✅ **Fully persistent** - Data survives Lambda restarts
+- ✅ **Serverless** - No database server to manage
+- ✅ **Auto-scaling** - Handles any traffic volume
+- ✅ **Free tier** - 25 GB storage, 200M requests/month included
 
 ---
 
@@ -345,9 +352,9 @@ https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-group
 - **Solution**: Enable `keep_warm: true` in zappa_settings.json
 - **Trade-off**: Small cost increase (~$5/month)
 
-**2. Database Not Updating**
-- **Cause**: Lambda filesystem is read-only
-- **Solution**: Migrate to DynamoDB or RDS for persistent writes
+**2. DynamoDB Access Denied**
+- **Cause**: Lambda role lacks DynamoDB permissions
+- **Solution**: Attach `AmazonDynamoDBFullAccess` policy to Lambda execution role
 
 **3. CORS Errors**
 - **Check**: CORS configuration in main.py
@@ -366,19 +373,18 @@ https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-group
 
 ## Future Enhancements
 
-### Phase 1: Database Migration
-- Migrate from SQLite to **DynamoDB**
-- Benefits:
-  - Persistent writes
-  - Unlimited scalability
-  - No file size limits
-  - Better for serverless
-
-### Phase 2: Monitoring
+### Phase 1: Monitoring & Analytics
 - CloudWatch Dashboard
 - Custom metrics
 - Error alerting
 - Performance tracking
+
+### Phase 2: Enhanced Features
+- Student dashboard with analytics
+- Advanced search and filtering
+- Bulk import/export improvements
+- Photo uploads (S3 integration)
+- Email notifications
 
 ### Phase 3: Custom Domain
 - Register domain: `students.wmu.edu`
@@ -404,4 +410,4 @@ https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-group
 ---
 
 **Last Updated**: October 8, 2025
-**Document Version**: 1.0
+**Document Version**: 2.3 (DynamoDB + Timezone Fix)

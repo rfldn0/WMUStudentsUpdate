@@ -3,49 +3,47 @@
 ## ✅ Completed Tasks
 
 1. ✅ **AWS Lambda Deployment** - Successfully deployed to production
-2. ✅ **Frontend Updated** - docs/index.html points to new Lambda endpoint
-3. ✅ **Documentation Created** - Comprehensive guides for deployment and implementation
-4. ✅ **Changelog Created** - Version history tracked
-5. ✅ **.gitignore Updated** - AWS-related files properly excluded
+2. ✅ **DynamoDB Migration** - Migrated from SQLite to serverless database
+3. ✅ **Frontend Updated** - docs/index.html points to new Lambda endpoint
+4. ✅ **Documentation Created** - Comprehensive guides for deployment and implementation
+5. ✅ **Changelog Created** - Version history tracked
+6. ✅ **Timezone Fix** - Timestamps now use Eastern Time (America/Detroit)
+7. ✅ **.gitignore Updated** - AWS-related files properly excluded
 
 ---
 
 ## 📋 Immediate Next Steps
 
-### 1. Clean Up Obsolete Files
+### 1. Deploy Timezone Fix to Production
 
-Run the cleanup script to remove temporary files:
+Update your Lambda deployment with the timezone fix:
 
-```powershell
-# Remove all obsolete files
-Remove-Item "WMU Stuedents Upgrade 1.xlsx" -Force -ErrorAction SilentlyContinue
-Remove-Item "temp_excel.xlsx" -Force -ErrorAction SilentlyContinue
-Remove-Item "migrate_to_sqlite.py" -Force -ErrorAction SilentlyContinue
-Remove-Item -Recurse -Force "templates\" -ErrorAction SilentlyContinue
+```bash
+# Make sure virtual environment is active
+.\env\Scripts\activate
 
-Write-Host "✅ Cleanup complete!" -ForegroundColor Green
+# Update Lambda with timezone fix
+zappa update production
+
+# Verify deployment
+zappa tail production
 ```
-
-See [CLEANUP_GUIDE.md](CLEANUP_GUIDE.md) for details.
 
 ---
 
-### 2. Test Your Live Application
+### 2. Test Timezone Fix
 
-**Test the API directly:**
+**Verify timestamps are now in Eastern Time:**
+1. Update a student record via the frontend
+2. Check the `updated_at` field - it should show timezone offset (e.g., `-04:00` for EDT)
+3. Time should match your local Michigan time, not UTC
+
+**Using db_manager.py:**
 ```bash
-# Test API root endpoint
-curl https://qkfsddvd8j.execute-api.us-east-1.amazonaws.com/production
-
-# Or in PowerShell
-Invoke-WebRequest -Uri "https://qkfsddvd8j.execute-api.us-east-1.amazonaws.com/production" | Select-Object -ExpandProperty Content
+.\env\Scripts\python.exe .\backend\db_manager.py
+# Select option 2 to search for a student
+# Check the created_at and updated_at timestamps
 ```
-
-**Test the frontend:**
-1. Visit: https://rfldn0.github.io/WMUStudentsUpdate/
-2. Fill out the form with test data
-3. Submit and verify it works
-4. Check response message
 
 ---
 
@@ -56,14 +54,13 @@ Invoke-WebRequest -Uri "https://qkfsddvd8j.execute-api.us-east-1.amazonaws.com/p
 git add .
 
 # Commit with descriptive message
-git commit -m "Add comprehensive AWS Lambda documentation and cleanup project
+git commit -m "Fix timezone issue and update documentation (v2.3.0)
 
-- Add CHANGELOG.md with version history
-- Add AWS_IMPLEMENTATION.md with technical details
-- Update README.md with AWS Lambda information
-- Add CLEANUP_GUIDE.md for project maintenance
-- Update .gitignore for AWS-related files
-- Remove obsolete Excel and migration files"
+- Fix: Timestamps now use Eastern Time (America/Detroit) instead of UTC
+- Add: zoneinfo module for timezone-aware timestamps
+- Add: tzdata package to requirements.txt for Windows support
+- Update: All documentation to reflect DynamoDB and timezone changes
+- Update: CHANGELOG.md with v2.3.0 timezone fix"
 
 # Push to GitHub
 git push
@@ -148,11 +145,11 @@ zappa undeploy production
 - [ ] Verify CORS is working properly
 - [ ] Check logs for any errors
 
-### Priority 2: Database Backup
-- [ ] Download `students.db` from project
+### Priority 2: DynamoDB Backup
+- [ ] Enable DynamoDB Point-in-Time Recovery (PITR)
+- [ ] Export data to CSV using db_manager.py (option 9)
 - [ ] Store backup in secure location
-- [ ] Document backup procedure
-- [ ] Consider automated backups (S3)
+- [ ] Consider automated backups to S3
 
 ### Priority 3: Monitoring Setup
 - [ ] Set up CloudWatch dashboard
@@ -167,11 +164,12 @@ zappa undeploy production
 - [ ] Add rate limiting if needed
 
 ### Priority 5: Future Enhancements
-- [ ] Migrate to DynamoDB for persistent writes
+- [x] Migrate to DynamoDB for persistent writes (COMPLETED)
+- [x] Fix timezone handling (COMPLETED)
 - [ ] Add custom domain name
 - [ ] Implement CI/CD with GitHub Actions
 - [ ] Add authentication for admin functions
-- [ ] Create admin dashboard
+- [ ] Create admin dashboard with analytics
 
 ---
 
@@ -225,10 +223,11 @@ pip install zappa setuptools
 zappa update production
 ```
 
-### Database Issues
-- Lambda filesystem is read-only (except /tmp)
-- Database is bundled in deployment package
-- For persistent writes, consider DynamoDB migration
+### DynamoDB Issues
+- Ensure Lambda role has `AmazonDynamoDBFullAccess` permission
+- Check table exists in correct region (us-east-1)
+- Verify table name is `wmu-students`
+- Check CloudWatch Logs for specific error messages
 
 ---
 
@@ -239,8 +238,8 @@ zappa update production
 | [README.md](README.md) | Main project overview and API documentation |
 | [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) | Step-by-step deployment guide |
 | [AWS_IMPLEMENTATION.md](AWS_IMPLEMENTATION.md) | Technical implementation details |
+| [DYNAMODB_MIGRATION.md](DYNAMODB_MIGRATION.md) | DynamoDB migration guide |
 | [CHANGELOG.md](CHANGELOG.md) | Version history and updates |
-| [CLEANUP_GUIDE.md](CLEANUP_GUIDE.md) | File cleanup instructions |
 | [NEXT_STEPS.md](NEXT_STEPS.md) | This file - what to do next |
 
 ---
@@ -296,4 +295,4 @@ Your application is now running serverless with:
 ---
 
 **Last Updated**: October 8, 2025
-**Status**: Deployment Complete ✅
+**Status**: v2.3.0 - DynamoDB + Timezone Fix Complete ✅

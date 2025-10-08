@@ -2,6 +2,28 @@
 
 All notable changes to WMU Student Data Update System will be documented in this file.
 
+## [2.3.0] - 2025-10-08
+
+### 🐛 Critical Fix: Timezone Correction
+
+#### Fixed
+- **Timezone Issue** - Timestamps now correctly use Eastern Time (America/Detroit)
+  - Previous: Timestamps were stored in UTC (AWS Lambda default), causing 4-5 hour offset
+  - Now: All timestamps use Eastern Time with automatic DST handling
+  - Example: 8:00 AM update now shows `2025-10-08T08:00:00-04:00` instead of `2025-10-08T13:00:00`
+  - Affects: `created_at` and `updated_at` fields in both main.py and db_manager.py
+
+#### Added
+- **Timezone Support** - Added `zoneinfo` module for timezone-aware timestamps
+- **tzdata Package** - Added to requirements.txt for Windows compatibility
+- **TIMEZONE Configuration** - Centralized timezone setting (`America/Detroit`)
+
+#### Changed
+- All `datetime.now()` calls updated to `datetime.now(TIMEZONE)`
+- Timestamps now include timezone offset information (ISO 8601 format with timezone)
+
+---
+
 ## [2.2.0] - 2025-10-08
 
 ### 🐛 Bug Fixes & Enhancements
