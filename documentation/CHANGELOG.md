@@ -2,6 +2,82 @@
 
 All notable changes to WMU Student Data Update System will be documented in this file.
 
+## [2.5.0] - 2025-10-08
+
+### 🚀 Major Enhancement: Database Manager Improvements
+
+#### Added
+- **Batch Edit Feature** - Edit multiple students simultaneously
+  - Select multiple students by IDN (comma-separated)
+  - Apply same change to all selected students
+  - Support for editing: Major, University, Year, Province
+  - Confirmation required before applying batch changes
+
+- **Single Edit Enhancement** - Improved single student editing
+  - Interactive field selection menu
+  - Edit multiple fields in one session
+  - Auto-formatting applied based on field type
+  - "Done editing" option when finished
+
+- **Continuous Add Feature** - Add multiple students in one session
+  - "Add more students?" prompt after each addition
+  - No need to return to main menu between additions
+  - Default value for University (Western Michigan University)
+
+- **Batch Delete Feature** - Delete multiple students at once
+  - Select multiple students by IDN (comma-separated)
+  - Preview all students before deletion
+  - Safety confirmation required
+  - Shows success/failure for each deletion
+
+- **Enhanced Show Data** - Multiple sorting options
+  - Sort by last changed (most recent updates first)
+  - Sort by first name (alphabetical A-Z)
+  - Sort by ID (IDN ascending)
+  - Display sort method in table header
+
+#### Changed
+- **Menu Restructure** - Reorganized for better workflow
+  - Option 1: Add new student(s)
+  - Option 2: Edit student (single/batch)
+  - Option 3: Show data (with sorting)
+  - Option 4: Generate CSV export
+  - Option 5: Remove student (single/batch)
+  - Options 6-10: Analysis features (search, counts)
+  - Option 11: Exit
+
+- **Delete Function** - Now shows submenu for single/batch delete
+- **Add Function** - Now supports continuous addition
+- **Menu Options** - Increased from 10 to 11 options
+
+#### Improved
+- Better user experience with clear prompts
+- More detailed student information display before delete
+- Enhanced error messages
+- Auto-formatting for all edit operations
+- Confirmation prompts for destructive operations
+
+---
+
+## [2.4.0] - 2025-10-08
+
+### 🔧 Frontend Refactoring & Bug Fix
+
+#### Changed
+- **Modular Frontend Structure** - Separated frontend code for better organization
+  - `docs/index.html` - HTML structure only
+  - `docs/script.js` - JavaScript logic (separated from HTML)
+  - `docs/style.css` - CSS styles (separated from HTML)
+  - Improved maintainability and code organization
+
+#### Fixed
+- **Script Loading Issue** - Fixed log output problem after data submission
+  - Previous: Script loaded before DOM elements, causing form submission failures
+  - Now: Script loads at end of body, ensuring all DOM elements exist
+  - Form submission and message display now work correctly
+
+---
+
 ## [2.3.0] - 2025-10-08
 
 ### 🐛 Critical Fix: Timezone Correction

@@ -20,7 +20,14 @@ dynamodb = boto3.resource('dynamodb', region_name=REGION)
 table = dynamodb.Table(DYNAMODB_TABLE)
 
 def view_all_students():
-    """View all students in table format"""
+    """View all students in table format with sorting options"""
+    print("\n=== SORT BY ===")
+    print("1. Last changed (updated_at)")
+    print("2. First name (alphabetical)")
+    print("3. ID (IDN)")
+
+    sort_choice = input("\nSelect sorting option (1-3): ").strip()
+
     try:
         response = table.scan()
         students = response['Items']
@@ -30,10 +37,23 @@ def view_all_students():
             response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             students.extend(response['Items'])
 
-        # Sort by IDN
-        students.sort(key=lambda x: int(x['idn']))
+        # Sort based on choice
+        if sort_choice == '1':
+            students.sort(key=lambda x: x.get('updated_at', ''), reverse=True)
+            sort_label = "Last Changed"
+        elif sort_choice == '2':
+            students.sort(key=lambda x: x.get('nama', '').lower())
+            sort_label = "Name (A-Z)"
+        elif sort_choice == '3':
+            students.sort(key=lambda x: int(x['idn']))
+            sort_label = "ID"
+        else:
+            students.sort(key=lambda x: int(x['idn']))
+            sort_label = "ID (default)"
 
-        print("\n" + "="*120)
+        print(f"\n{'='*120}")
+        print(f"Sorted by: {sort_label}")
+        print(f"{'='*120}")
         print(f"{'IDN':<6} {'NAMA':<25} {'JURUSAN':<20} {'UNIVERSITY':<30} {'YEAR':<10} {'PROVINSI':<15}")
         print("="*120)
 
@@ -183,51 +203,250 @@ def count_graduated_students():
         print(f"[ERROR] {e}")
 
 def add_student():
-    """Add new student interactively"""
-    print("\n=== ADD NEW STUDENT ===")
+    """Add new student interactively with option to add multiple"""
+    while True:
+        print("\n=== ADD NEW STUDENT ===")
 
-    nama = input("Name: ").strip().title()
-    jurusan = input("Major: ").strip().title()
-    university = input("University: ").strip()
-    year = input("Year: ").strip()
-    provinsi = input("Province: ").strip().title()
+        nama = input("Name: ").strip().title()
+        if not nama:
+            print("[ERROR] Name is required")
+            continue
 
-    if not nama:
-        print("[ERROR] Name is required")
-        return
+        jurusan = input("Major (Jurusan): ").strip().title()
+        university = input("University [Western Michigan University]: ").strip() or "Western Michigan University"
+        year = input("Year (e.g., Freshman, FALL 2025): ").strip()
+        provinsi = input("Province (Provinsi): ").strip().title()
 
+        try:
+            # Get next IDN
+            response = table.scan(ProjectionExpression='idn')
+            if response['Items']:
+                max_idn = max([int(item['idn']) for item in response['Items']])
+                new_idn = max_idn + 1
+            else:
+                new_idn = 1
+
+            # Add student
+            table.put_item(
+                Item={
+                    'idn': new_idn,
+                    'nama': nama,
+                    'jurusan': jurusan,
+                    'university': university,
+                    'year': year,
+                    'provinsi': provinsi,
+                    'created_at': datetime.now(TIMEZONE).isoformat(),
+                    'updated_at': datetime.now(TIMEZONE).isoformat()
+                }
+            )
+
+            print(f"\n[SUCCESS] Added student: {nama} (IDN: {new_idn})")
+
+        except ClientError as e:
+            print(f"[ERROR] {e}")
+
+        # Ask if user wants to add more
+        add_more = input("\nAdd more students? (yes/no): ").strip().lower()
+        if add_more not in ['yes', 'y']:
+            break
+
+def edit_student():
+    """Edit student data (single or batch)"""
+    print("\n=== EDIT STUDENT ===")
+    print("1. Edit single student")
+    print("2. Edit batch (multiple students)")
+
+    choice = input("\nSelect option (1-2): ").strip()
+
+    if choice == '1':
+        edit_single_student()
+    elif choice == '2':
+        edit_batch_students()
+    else:
+        print("[ERROR] Invalid option")
+
+def edit_single_student():
+    """Edit a single student's data"""
     try:
-        # Get next IDN
-        response = table.scan(ProjectionExpression='idn')
-        if response['Items']:
-            max_idn = max([int(item['idn']) for item in response['Items']])
-            new_idn = max_idn + 1
-        else:
-            new_idn = 1
+        idn = int(input("\nEnter student IDN to edit: "))
 
-        # Add student
-        table.put_item(
-            Item={
-                'idn': new_idn,
-                'nama': nama,
-                'jurusan': jurusan,
-                'university': university,
-                'year': year,
-                'provinsi': provinsi,
-                'created_at': datetime.now(TIMEZONE).isoformat(),
-                'updated_at': datetime.now(TIMEZONE).isoformat()
+        # Get student
+        response = table.get_item(Key={'idn': idn})
+
+        if 'Item' not in response:
+            print(f"[ERROR] Student with IDN {idn} not found")
+            return
+
+        student = response['Item']
+        print(f"\nCurrent data for: {student.get('nama', 'N/A')}")
+        print(f"IDN: {int(student['idn'])}")
+        print(f"Name: {student.get('nama', 'N/A')}")
+        print(f"Major: {student.get('jurusan', 'N/A')}")
+        print(f"University: {student.get('university', 'N/A')}")
+        print(f"Year: {student.get('year', 'N/A')}")
+        print(f"Province: {student.get('provinsi', 'N/A')}")
+
+        # Edit fields
+        while True:
+            print("\n=== SELECT FIELD TO EDIT ===")
+            print("1. Name (Nama)")
+            print("2. Major (Jurusan)")
+            print("3. University")
+            print("4. Year")
+            print("5. Province (Provinsi)")
+            print("6. Done editing")
+
+            field_choice = input("\nSelect field (1-6): ").strip()
+
+            if field_choice == '6':
+                break
+
+            field_map = {
+                '1': ('nama', 'Name'),
+                '2': ('jurusan', 'Major'),
+                '3': ('university', 'University'),
+                '4': ('year', 'Year'),
+                '5': ('provinsi', 'Province')
             }
-        )
 
-        print(f"\n[SUCCESS] Added student: {nama} (IDN: {new_idn})")
+            if field_choice in field_map:
+                field_key, field_name = field_map[field_choice]
+                current_value = student.get(field_key, 'N/A')
+                print(f"\nCurrent {field_name}: {current_value}")
+                new_value = input(f"New {field_name}: ").strip()
 
+                if new_value:
+                    # Auto-format based on field
+                    if field_key in ['nama', 'jurusan', 'provinsi']:
+                        new_value = new_value.title()
+
+                    student[field_key] = new_value
+                    print(f"[SUCCESS] {field_name} updated to: {new_value}")
+                else:
+                    print("[INFO] No change made")
+            else:
+                print("[ERROR] Invalid option")
+
+        # Update timestamp and save
+        student['updated_at'] = datetime.now(TIMEZONE).isoformat()
+        table.put_item(Item=student)
+        print(f"\n[SUCCESS] Student {student['nama']} (IDN: {idn}) updated successfully")
+
+    except ValueError:
+        print("[ERROR] IDN must be a number")
     except ClientError as e:
         print(f"[ERROR] {e}")
 
-def delete_student():
-    """Delete student by IDN"""
+def edit_batch_students():
+    """Edit multiple students with the same change"""
+    print("\n=== BATCH EDIT STUDENTS ===")
+
+    # Get list of IDNs
+    idns_input = input("Enter student IDNs (comma-separated, e.g., 1,5,12): ").strip()
+
     try:
-        idn = int(input("Enter student IDN to delete: "))
+        idns = [int(idn.strip()) for idn in idns_input.split(',')]
+    except ValueError:
+        print("[ERROR] Invalid IDN format. Use comma-separated numbers.")
+        return
+
+    if not idns:
+        print("[ERROR] No IDNs provided")
+        return
+
+    # Show students to be edited
+    print(f"\n=== STUDENTS TO BE EDITED ({len(idns)}) ===")
+    students_to_edit = []
+
+    for idn in idns:
+        try:
+            response = table.get_item(Key={'idn': idn})
+            if 'Item' in response:
+                student = response['Item']
+                students_to_edit.append(student)
+                print(f"IDN {idn}: {student.get('nama', 'N/A')}")
+            else:
+                print(f"IDN {idn}: [NOT FOUND]")
+        except ClientError as e:
+            print(f"IDN {idn}: [ERROR] {e}")
+
+    if not students_to_edit:
+        print("[ERROR] No valid students found")
+        return
+
+    # Select field to change
+    while True:
+        print("\n=== SELECT FIELD TO CHANGE FOR ALL ===")
+        print("1. Major (Jurusan)")
+        print("2. University")
+        print("3. Year")
+        print("4. Province (Provinsi)")
+        print("5. Done editing")
+
+        field_choice = input("\nSelect field (1-5): ").strip()
+
+        if field_choice == '5':
+            break
+
+        field_map = {
+            '1': ('jurusan', 'Major'),
+            '2': ('university', 'University'),
+            '3': ('year', 'Year'),
+            '4': ('provinsi', 'Province')
+        }
+
+        if field_choice in field_map:
+            field_key, field_name = field_map[field_choice]
+            new_value = input(f"\nNew {field_name} for all selected students: ").strip()
+
+            if not new_value:
+                print("[INFO] No change made")
+                continue
+
+            # Auto-format based on field
+            if field_key in ['jurusan', 'provinsi']:
+                new_value = new_value.title()
+
+            # Confirm
+            confirm = input(f"\nUpdate {field_name} to '{new_value}' for {len(students_to_edit)} student(s)? (yes/no): ").strip().lower()
+
+            if confirm in ['yes', 'y']:
+                # Update all students
+                updated_count = 0
+                for student in students_to_edit:
+                    try:
+                        student[field_key] = new_value
+                        student['updated_at'] = datetime.now(TIMEZONE).isoformat()
+                        table.put_item(Item=student)
+                        updated_count += 1
+                    except ClientError as e:
+                        print(f"[ERROR] Failed to update IDN {student['idn']}: {e}")
+
+                print(f"\n[SUCCESS] Updated {updated_count}/{len(students_to_edit)} student(s)")
+            else:
+                print("[INFO] Update cancelled")
+        else:
+            print("[ERROR] Invalid option")
+
+def delete_student():
+    """Delete student (single or batch)"""
+    print("\n=== REMOVE STUDENT ===")
+    print("1. Remove single student")
+    print("2. Remove batch (multiple students)")
+
+    choice = input("\nSelect option (1-2): ").strip()
+
+    if choice == '1':
+        delete_single_student()
+    elif choice == '2':
+        delete_batch_students()
+    else:
+        print("[ERROR] Invalid option")
+
+def delete_single_student():
+    """Delete a single student by IDN"""
+    try:
+        idn = int(input("\nEnter student IDN to delete: "))
 
         # Get student first
         response = table.get_item(Key={'idn': idn})
@@ -237,20 +456,78 @@ def delete_student():
             return
 
         student = response['Item']
-        print(f"\nStudent found: {student.get('nama', 'N/A')}")
+        print(f"\nStudent found:")
+        print(f"IDN: {int(student['idn'])}")
+        print(f"Name: {student.get('nama', 'N/A')}")
+        print(f"Major: {student.get('jurusan', 'N/A')}")
+        print(f"University: {student.get('university', 'N/A')}")
 
-        confirm = input("Are you sure you want to delete? (yes/no): ")
+        confirm = input("\nAre you sure you want to delete? (yes/no): ").strip().lower()
 
-        if confirm.lower() == 'yes' or confirm.lower() == 'y':
+        if confirm in ['yes', 'y']:
             table.delete_item(Key={'idn': idn})
-            print(f"[SUCCESS] Deleted student IDN {idn}")
+            print(f"[SUCCESS] Deleted student {student.get('nama', 'N/A')} (IDN: {idn})")
         else:
-            print("Cancelled")
+            print("[INFO] Deletion cancelled")
 
     except ValueError:
         print("[ERROR] IDN must be a number")
     except ClientError as e:
         print(f"[ERROR] {e}")
+
+def delete_batch_students():
+    """Delete multiple students"""
+    print("\n=== BATCH REMOVE STUDENTS ===")
+
+    # Get list of IDNs
+    idns_input = input("Enter student IDNs to delete (comma-separated, e.g., 1,5,12): ").strip()
+
+    try:
+        idns = [int(idn.strip()) for idn in idns_input.split(',')]
+    except ValueError:
+        print("[ERROR] Invalid IDN format. Use comma-separated numbers.")
+        return
+
+    if not idns:
+        print("[ERROR] No IDNs provided")
+        return
+
+    # Show students to be deleted
+    print(f"\n=== STUDENTS TO BE DELETED ({len(idns)}) ===")
+    students_to_delete = []
+
+    for idn in idns:
+        try:
+            response = table.get_item(Key={'idn': idn})
+            if 'Item' in response:
+                student = response['Item']
+                students_to_delete.append(student)
+                print(f"IDN {idn}: {student.get('nama', 'N/A')}")
+            else:
+                print(f"IDN {idn}: [NOT FOUND]")
+        except ClientError as e:
+            print(f"IDN {idn}: [ERROR] {e}")
+
+    if not students_to_delete:
+        print("[ERROR] No valid students found")
+        return
+
+    # Confirm deletion
+    confirm = input(f"\n⚠️  Delete {len(students_to_delete)} student(s)? This cannot be undone! (yes/no): ").strip().lower()
+
+    if confirm in ['yes', 'y']:
+        deleted_count = 0
+        for student in students_to_delete:
+            try:
+                table.delete_item(Key={'idn': int(student['idn'])})
+                print(f"✓ Deleted: {student.get('nama', 'N/A')} (IDN: {student['idn']})")
+                deleted_count += 1
+            except ClientError as e:
+                print(f"✗ Failed to delete IDN {student['idn']}: {e}")
+
+        print(f"\n[SUCCESS] Deleted {deleted_count}/{len(students_to_delete)} student(s)")
+    else:
+        print("[INFO] Deletion cancelled")
 
 def export_to_csv():
     """Export all students to CSV"""
@@ -298,45 +575,48 @@ def menu():
         print("\n" + "="*60)
         print("WMU STUDENTS - DYNAMODB MANAGER")
         print("="*60)
-        print("1.  View all students (table)")
-        print("2.  Search student by name")
-        print("3.  Count total students")
-        print("4.  Count by major")
-        print("5.  Count by province")
-        print("6.  Count graduated students")
-        print("7.  Add new student")
-        print("8.  Delete student")
-        print("9.  Export to CSV")
-        print("10. Exit")
+        print("1.  Add new student(s)")
+        print("2.  Edit student (single/batch)")
+        print("3.  Show data (with sorting)")
+        print("4.  Generate CSV export")
+        print("5.  Remove student (single/batch)")
+        print("6.  Search student by name")
+        print("7.  Count total students")
+        print("8.  Count by major")
+        print("9.  Count by province")
+        print("10. Count graduated students")
+        print("11. Exit")
         print("="*60)
 
-        choice = input("\nSelect option (1-10): ").strip()
+        choice = input("\nSelect option (1-11): ").strip()
 
-        match choice: 
+        match choice:
             case '1':
+                add_student()
+            case '2':
+                edit_student()
+            case '3':
                 view_all_students()
-            case  '2':
+            case '4':
+                export_to_csv()
+            case '5':
+                delete_student()
+            case '6':
                 name = input("Enter student name (or part of it): ")
                 search_student(name)
-            case  '3':
+            case '7':
                 count_students()
-            case  '4':
+            case '8':
                 count_by_major()
-            case  '5':
+            case '9':
                 count_by_province()
-            case  '6':
+            case '10':
                 count_graduated_students()
-            case  '7':
-                add_student()
-            case  '8':
-                delete_student()
-            case  '9':
-                export_to_csv()
-            case  '10':
+            case '11':
                 print("\nGoodbye!")
                 break
             case _:
-                print("[ERROR] Invalid option")
+                print("[ERROR] Invalid option. Please select 1-11.")
 
 if __name__ == '__main__':
     menu()

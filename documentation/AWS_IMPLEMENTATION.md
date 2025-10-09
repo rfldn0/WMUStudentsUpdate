@@ -20,8 +20,9 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                   GITHUB PAGES                               │
 │  https://rfldn0.github.io/WMUStudentsUpdate/                │
-│  - Static HTML/CSS/JavaScript                                │
-│  - Frontend form interface                                   │
+│  - index.html (HTML structure)                               │
+│  - script.js (Frontend JavaScript - modular)                 │
+│  - style.css (Frontend styles - modular)                     │
 └────────────────────────┬────────────────────────────────────┘
                          │ HTTPS POST/GET
                          ▼
@@ -410,4 +411,4 @@ https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-group
 ---
 
 **Last Updated**: October 8, 2025
-**Document Version**: 2.3 (DynamoDB + Timezone Fix)
+**Document Version**: 2.5 (Enhanced Database Manager)

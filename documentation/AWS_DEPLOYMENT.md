@@ -87,7 +87,7 @@ Your endpoint: https://abc123xyz.execute-api.us-east-1.amazonaws.com/production
 
 ### 3. Update Frontend
 
-Update `docs/index.html` line 219:
+Update `docs/script.js` line 8:
 ```javascript
 const API_URL = 'https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/production';
 ```
@@ -97,7 +97,7 @@ Replace with your actual endpoint from step 2.
 ### 4. Push to GitHub
 
 ```bash
-git add docs/index.html
+git add docs/script.js
 git commit -m "Update API endpoint to AWS Lambda"
 git push
 ```

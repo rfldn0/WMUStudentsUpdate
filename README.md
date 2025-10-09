@@ -23,7 +23,9 @@ WMUStudentsUpdate/
 │   ├── students.db            # SQLite backup (deprecated)
 │   └── __init__.py            # Package marker
 ├── docs/                       # Frontend (GitHub Pages)
-│   └── index.html             # Student submission form
+│   ├── index.html             # Student submission form
+│   ├── script.js              # Frontend JavaScript (modular)
+│   └── style.css              # Frontend styles (modular)
 ├── documentation/              # Project documentation
 │   ├── AWS_DEPLOYMENT.md      # Deployment guide
 │   ├── AWS_IMPLEMENTATION.md  # Technical details
@@ -215,13 +217,22 @@ Interactive CLI tool for managing DynamoDB data:
 python backend/db_manager.py
 ```
 
-**Features:**
-- View all students in formatted table
-- Search students by name
-- Count by major/province
-- Count graduated students (vs current students)
-- Add/delete students
-- Export to CSV
+**Main Features:**
+1. **Add Students** - Add single or multiple students with continuous input
+2. **Edit Students** - Edit single student or batch edit multiple students
+   - Single edit: Modify any field for one student
+   - Batch edit: Update same field for multiple students at once
+3. **Show Data** - View all students with sorting options:
+   - Sort by last changed (most recent updates first)
+   - Sort by first name (alphabetical)
+   - Sort by ID (IDN)
+4. **Generate CSV** - Export all student data to CSV file
+5. **Remove Students** - Delete single student or batch delete multiple students
+6. **Search** - Find students by name (partial match supported)
+7. **Count Total** - Display total number of students
+8. **Count by Major** - Breakdown of students per major
+9. **Count by Province** - Breakdown of students per province
+10. **Count Graduated** - View graduated vs current students
 
 **Student Classification:**
 - **Current Students**: Freshman, Sophomore, Junior, Senior

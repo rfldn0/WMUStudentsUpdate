@@ -9,7 +9,9 @@ WMUStudentsUpdate/
 │   ├── db_manager.py              # Database management CLI (10 options)
 │   └── __init__.py
 ├── docs/                           # Frontend (GitHub Pages)
-│   └── index.html                 # Student submission form
+│   ├── index.html                 # Student submission form
+│   ├── script.js                  # Frontend JavaScript (modular)
+│   └── style.css                  # Frontend styles (modular)
 ├── documentation/                  # All documentation
 │   ├── README.md                  # Documentation index
 │   ├── AWS_DEPLOYMENT.md          # Deployment guide
@@ -59,17 +61,18 @@ WMUStudentsUpdate/
 python backend/db_manager.py
 ```
 
-**Options:**
-1. View all students (table)
-2. Search by name
-3. Count total students
-4. Count by major
-5. Count by province
-6. Count graduated students ⭐ NEW
-7. Add student
-8. Delete student
-9. Export to CSV
-10. Exit
+**Enhanced Options (v2.5.0):**
+1. Add new student(s) - Continuous input for multiple students ⭐ NEW
+2. Edit student (single/batch) - Single or batch editing ⭐ NEW
+3. Show data (with sorting) - Sort by last changed, name, or ID ⭐ NEW
+4. Generate CSV export
+5. Remove student (single/batch) - Single or batch deletion ⭐ NEW
+6. Search student by name
+7. Count total students
+8. Count by major
+9. Count by province
+10. Count graduated students
+11. Exit
 
 ---
 
@@ -120,4 +123,4 @@ python backend/main.py        # Run API locally (port 5000)
 
 ---
 
-**Version**: 2.3.0 | **Status**: Production ✅ | **Students**: 58+
+**Version**: 2.5.0 | **Status**: Production ✅ | **Students**: 58+
