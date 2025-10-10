@@ -6,22 +6,26 @@ https://us-east-1.console.aws.amazon.com/singlesignon/home?region=us-east-1#/ins
 
 A modern serverless web application for managing Western Michigan University student information. Built with AWS Lambda, API Gateway, and GitHub Pages.
 
-## 🏗️ Architecture
+## Architecture
 
 - **Frontend**: Static HTML/CSS/JavaScript → GitHub Pages
 - **Backend**: Flask REST API → AWS Lambda (Serverless)
 - **API Gateway**: RESTful endpoints with auto-scaling
 - **Database**: AWS DynamoDB (Serverless, fully persistent)
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 WMUStudentsUpdate/
 ├── backend/                    # Backend API (AWS Lambda)
 │   ├── main.py                # Flask application with DynamoDB
-│   ├── db_manager.py          # Database management CLI tool
+│   ├── db_manager.py          # Database management CLI (entry point)
+│   ├── student_manager.py     # Core data operations module
+│   ├── student_viewer.py      # Viewing operations module
+│   ├── student_editor.py      # Editing operations module
+│   ├── csv_exporter.py        # CSV export module
+│   ├── menu_system.py         # Menu navigation module
 │   ├── students.db            # SQLite backup (deprecated)
-│   └── __init__.py            # Package marker
 ├── docs/                       # Frontend (GitHub Pages)
 │   ├── index.html             # Student submission form
 │   ├── script.js              # Frontend JavaScript (modular)
@@ -43,29 +47,29 @@ WMUStudentsUpdate/
 └── README.md                   # This file
 ```
 
-## 🚀 Live Deployment
+## Live Deployment
 
 - **Frontend**: https://rfldn0.github.io/WMUStudentsUpdate/
 - **Backend API**: https://qkfsddvd8j.execute-api.us-east-1.amazonaws.com/production
 - **Platform**: AWS Lambda + API Gateway (Serverless)
 - **Cost**: ~$0.05/year (99% savings vs traditional hosting)
 
-## ✨ Features
+## Features
 
-- ✅ Clean web form for data entry
-- ✅ **DynamoDB** - Fully persistent serverless database
-- ✅ **Auto-formatting** - Names/majors auto-formatted to Title Case
-- ✅ **Database Manager** - Interactive CLI tool for data management
-- ✅ Case-insensitive duplicate detection
-- ✅ Auto-generates unique student IDN
-- ✅ Update existing or add new students
-- ✅ CORS enabled for cross-origin requests
-- ✅ RESTful API with multiple endpoints
-- ✅ Modern dark UI design
-- ✅ Serverless auto-scaling
-- ✅ Export to CSV functionality
+- Clean web form for data entry
+- DynamoDB - Fully persistent serverless database
+- Auto-formatting - Names/majors auto-formatted to Title Case
+- Database Manager - Interactive CLI tool for data management
+- Case-insensitive duplicate detection
+- Auto-generates unique student IDN
+- Update existing or add new students
+- CORS enabled for cross-origin requests
+- RESTful API with multiple endpoints
+- Modern dark UI design
+- Serverless auto-scaling
+- Export to CSV functionality
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### GET /
 Returns API information and statistics
@@ -114,7 +118,7 @@ List all students (ordered by name)
 ### GET /students/<nama>
 Get specific student by name (case-insensitive)
 
-## 🗄️ Database Schema (DynamoDB)
+## Database Schema (DynamoDB)
 
 **Table**: `wmu-students` (us-east-1)
 **Billing**: Pay-per-request (on-demand)
@@ -130,7 +134,7 @@ Get specific student by name (case-insensitive)
 | `created_at` | String | ISO timestamp with timezone (Eastern Time) |
 | `updated_at` | String | ISO timestamp with timezone (Eastern Time) |
 
-## 💻 Local Development
+## Local Development
 
 ### Prerequisites
 
@@ -161,7 +165,7 @@ python backend/main.py
 # Server starts at http://localhost:5000
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Backend (AWS Lambda)
 
@@ -197,7 +201,7 @@ zappa tail production
 
 Your frontend will be live at: `https://YOUR_USERNAME.github.io/WMUStudentsUpdate/`
 
-## 📦 Dependencies
+## Dependencies
 
 ```
 Flask==3.0.0
@@ -209,43 +213,55 @@ boto3>=1.26.0
 tzdata>=2024.1
 ```
 
-## 🛠️ Database Manager
+## Database Manager
 
-Interactive CLI tool for managing DynamoDB data:
+Interactive CLI tool for managing DynamoDB data with organized menu system:
 
 ```bash
 python backend/db_manager.py
 ```
 
-**Main Features:**
-1. **Add Students** - Add single or multiple students with continuous input
-2. **Edit Students** - Edit single student or batch edit multiple students
-   - Single edit: Modify any field for one student
-   - Batch edit: Update same field for multiple students at once
-3. **Show Data** - View all students with sorting options:
-   - Sort by last changed (most recent updates first)
-   - Sort by first name (alphabetical)
-   - Sort by ID (IDN)
-4. **Generate CSV** - Export all student data to CSV file
-5. **Remove Students** - Delete single student or batch delete multiple students
-6. **Search** - Find students by name (partial match supported)
-7. **Count Total** - Display total number of students
-8. **Count by Major** - Breakdown of students per major
-9. **Count by Province** - Breakdown of students per province
-10. **Count Graduated** - View graduated vs current students
+### **Main Menu (5 Options)**
+1. 👁️  **View Data** - Browse and search student records
+2. ✏️  **Manage Students** - Add, edit, or remove students
+3. 📊 **Analytics & Statistics** - View counts and breakdowns
+4. 📄 **Generate CSV Export** - Export data to CSV files
+5. 🚪 **Exit** - Close the application
+
+### **Submenu Details**
+
+#### **1. View Data**
+- **Show all students** - View with sorting options (by last changed, name, or ID)
+- **Show recent changes** - Filter by time range (24hrs/7days/30days/custom)
+- **Search student** - Find students by name (partial match)
+
+#### **2. Manage Students**
+- **Add new student(s)** - Continuous input for multiple students
+- **Edit student** - Single or batch editing with field selection
+- **Remove student** - Single or batch deletion with confirmation
+
+#### **3. Analytics & Statistics**
+- **Count total students** - Total number in database
+- **Count by major** - Breakdown by field of study
+- **Count by province** - Breakdown by region
+- **Count graduated students** - Graduated vs current students
+
+#### **4. Generate CSV Export**
+- **Export all students** - Complete database export
+- **Export by province** - Filter by specific province
 
 **Student Classification:**
 - **Current Students**: Freshman, Sophomore, Junior, Senior
 - **Graduated Students**: Graduation semester format (e.g., "FALL 2025", "SPRING 2026")
 
-## 📚 Documentation
+## Documentation
 
 - **[AWS_DEPLOYMENT.md](documentation/AWS_DEPLOYMENT.md)** - Step-by-step deployment guide
 - **[AWS_IMPLEMENTATION.md](documentation/AWS_IMPLEMENTATION.md)** - Technical implementation details
 - **[CHANGELOG.md](documentation/CHANGELOG.md)** - Version history and updates
 - **[NEXT_STEPS.md](documentation/NEXT_STEPS.md)** - Maintenance and troubleshooting guide
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 **DynamoDB connection errors**: Verify AWS credentials and IAM permissions for DynamoDB
 
@@ -263,17 +279,17 @@ python backend/db_manager.py
 
 **DynamoDB permissions**: Lambda needs `AmazonDynamoDBFullAccess` policy attached
 
-## 🔐 Security & Best Practices
+## Security & Best Practices
 
-- ✅ Serverless architecture (no exposed servers)
-- ✅ CORS enabled for authorized domains
-- ✅ DynamoDB parameterized queries (no injection vulnerabilities)
-- ✅ Smart duplicate detection (firstName + lastName matching)
-- ✅ Input validation and auto-formatting
-- ✅ AWS IAM roles for least privilege access
-- ✅ HTTPS-only via API Gateway
+- Serverless architecture (no exposed servers)
+- CORS enabled for authorized domains
+- DynamoDB parameterized queries (no injection vulnerabilities)
+- Smart duplicate detection (firstName + lastName matching)
+- Input validation and auto-formatting
+- AWS IAM roles for least privilege access
+- HTTPS-only via API Gateway
 
-## 🤝 Contributing
+## Contributing
 
 1. Clone the repository
 2. Create a feature branch
@@ -282,13 +298,13 @@ python backend/db_manager.py
 5. Update Lambda: `zappa update production`
 6. Push to GitHub
 
-## 📄 License
+## License
 
 MIT License - Feel free to use for educational purposes
 
 ---
 
-**Built with ❤️ for Western Michigan University Indonesian Students**
+Built for Western Michigan University Indonesian Students
 
 **Deployed on**: AWS Lambda (Serverless)
 **Maintained by**: Victor Tabuni (rfldn0)

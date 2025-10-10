@@ -1,13 +1,17 @@
 # Project Structure
 
-## 📁 Clean & Organized Structure
+## Clean & Organized Structure
 
 ```
 WMUStudentsUpdate/
 ├── backend/                        # Backend (Lambda + DynamoDB)
 │   ├── main.py                    # Flask API with smart name matching + timezone
-│   ├── db_manager.py              # Database management CLI (10 options)
-│   └── __init__.py
+│   ├── db_manager.py              # Database management CLI (entry point)
+│   ├── student_manager.py         # Core data operations module
+│   ├── student_viewer.py          # Viewing operations module
+│   ├── student_editor.py          # Editing operations module
+│   ├── csv_exporter.py            # CSV export module
+│   ├── menu_system.py             # Menu navigation module
 ├── docs/                           # Frontend (GitHub Pages)
 │   ├── index.html                 # Student submission form
 │   ├── script.js                  # Frontend JavaScript (modular)
@@ -33,9 +37,9 @@ WMUStudentsUpdate/
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
-### Timezone Fix (v2.3.0) ⭐ NEW
+### Timezone Fix (v2.3.0)
 - **Eastern Time (America/Detroit)** - Timestamps match Michigan local time
 - **Automatic DST handling** - No manual timezone adjustments needed
 - **ISO 8601 with offset** - e.g., `2025-10-08T08:00:00-04:00`
@@ -61,22 +65,24 @@ WMUStudentsUpdate/
 python backend/db_manager.py
 ```
 
-**Enhanced Options (v2.5.0):**
-1. Add new student(s) - Continuous input for multiple students ⭐ NEW
-2. Edit student (single/batch) - Single or batch editing ⭐ NEW
-3. Show data (with sorting) - Sort by last changed, name, or ID ⭐ NEW
-4. Generate CSV export
-5. Remove student (single/batch) - Single or batch deletion ⭐ NEW
-6. Search student by name
-7. Count total students
-8. Count by major
-9. Count by province
-10. Count graduated students
-11. Exit
+**Organized Menu System (v2.8.0):**
+
+**Main Menu:**
+1. View Data
+2. Manage Students
+3. Analytics & Statistics
+4. Generate CSV Export
+5. Exit
+
+**Submenus:**
+- **View Data:** Show all (sorting), Recent changes, Search
+- **Manage Students:** Add, Edit (single/batch), Remove (single/batch)
+- **Analytics:** Count total, by major, by province, graduated students
+- **CSV Export:** All students or by province
 
 ---
 
-## 📊 Database: DynamoDB
+## Database: DynamoDB
 
 **Table**: `wmu-students` (us-east-1)
 **Billing**: Pay-per-request (on-demand)
@@ -94,7 +100,7 @@ python backend/db_manager.py
 
 ---
 
-## 🚀 Quick Commands
+## Quick Commands
 
 ### Deploy
 ```bash
@@ -115,7 +121,7 @@ python backend/main.py        # Run API locally (port 5000)
 
 ---
 
-## 🔗 URLs
+## URLs
 
 - **Frontend**: https://rfldn0.github.io/WMUStudentsUpdate/
 - **API**: https://qkfsddvd8j.execute-api.us-east-1.amazonaws.com/production
@@ -123,4 +129,4 @@ python backend/main.py        # Run API locally (port 5000)
 
 ---
 
-**Version**: 2.5.0 | **Status**: Production ✅ | **Students**: 58+
+**Version**: 3.0.0 | **Status**: Production | **Students**: 58+

@@ -2,7 +2,7 @@
 
 Complete documentation for WMU Papuan Student Data Update System.
 
-## 📖 Reading Order
+## Reading Order
 
 ### Getting Started
 1. **[AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md)** - Step-by-step deployment guide
@@ -35,7 +35,7 @@ Complete documentation for WMU Papuan Student Data Update System.
 
 ---
 
-## 📚 Quick Reference
+## Quick Reference
 
 ### For Deployment
 → Start with [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md)
@@ -54,5 +54,5 @@ Complete documentation for WMU Papuan Student Data Update System.
 
 ---
 
-**Version:** 2.5.0 (Enhanced Database Manager)
-**Last Updated:** October 8, 2025
+**Version:** 3.0.0 (Documentation Cleanup)
+**Last Updated:** October 10, 2025

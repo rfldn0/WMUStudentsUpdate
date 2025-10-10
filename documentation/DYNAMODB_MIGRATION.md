@@ -5,11 +5,11 @@
 Migrating from SQLite to DynamoDB for persistent, serverless storage.
 
 **Benefits:**
-- ✅ Fully persistent (data survives Lambda restarts)
-- ✅ Serverless (no server management)
-- ✅ Auto-scaling
-- ✅ Free tier: 25GB storage, 200M requests/month
-- ✅ Perfect for Lambda
+- Fully persistent (data survives Lambda restarts)
+- Serverless (no server management)
+- Auto-scaling
+- Free tier: 25GB storage, 200M requests/month
+- Perfect for Lambda
 
 ---
 
@@ -43,7 +43,7 @@ python create_dynamodb_table.py
 **Expected output:**
 ```
 Creating table 'wmu-students'...
-✅ Table 'wmu-students' created successfully!
+Table 'wmu-students' created successfully!
 ```
 
 ---
@@ -62,10 +62,10 @@ python migrate_to_dynamodb.py
 **Expected output:**
 ```
 Migrating 57 students to DynamoDB...
-✅ Migrated: John Doe (IDN: 1)
-✅ Migrated: Jane Smith (IDN: 2)
+Migrated: John Doe (IDN: 1)
+Migrated: Jane Smith (IDN: 2)
 ...
-✅ Migration complete!
+Migration complete!
 Successful: 57
 Failed: 0
 ```
@@ -269,13 +269,13 @@ mv backend/students.db backend/students_backup.db
 ## Next Steps
 
 After migration:
-1. ✅ Test form submission thoroughly
-2. ✅ Test student updates
-3. ✅ Verify data persistence after Lambda cold start
-4. ✅ Update documentation
-5. ✅ Commit changes to GitHub
+1. Test form submission thoroughly
+2. Test student updates
+3. Verify data persistence after Lambda cold start
+4. Update documentation
+5. Commit changes to GitHub
 
 ---
 
-**Last Updated**: October 8, 2025
+**Last Updated**: October 10, 2025
 **Migration Status**: Ready to deploy
