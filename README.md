@@ -1,9 +1,5 @@
 # WMU Papuan Student Data Update System
 
-``` save links:
-https://us-east-1.console.aws.amazon.com/singlesignon/home?region=us-east-1#/instances/7223ffcfae0b672b/dashboard
-```
-
 A modern serverless web application for managing Western Michigan University student information. Built with AWS Lambda, API Gateway, and GitHub Pages.
 
 ## Architecture
@@ -279,33 +275,47 @@ python backend/db_manager.py
 
 **DynamoDB permissions**: Lambda needs `AmazonDynamoDBFullAccess` policy attached
 
-## Security & Best Practices
+## Security Features
 
-- Serverless architecture (no exposed servers)
-- CORS enabled for authorized domains
-- DynamoDB parameterized queries (no injection vulnerabilities)
-- Smart duplicate detection (firstName + lastName matching)
-- Input validation and auto-formatting
-- AWS IAM roles for least privilege access
-- HTTPS-only via API Gateway
+This application implements multiple layers of security to protect sensitive student data:
 
-## Contributing
+- **Rate Limiting**: 200 requests/day, 50/hour globally; specific limits per endpoint
+- **API Key Authentication**: Required for all write operations (POST /submit)
+- **Input Validation**: Strict regex patterns for all user inputs (max 100 chars)
+- **Request Size Limits**: 1MB maximum payload size
+- **CORS Protection**: Only allows requests from authorized GitHub Pages domain
+- **Security Headers**: HSTS, CSP, X-Frame-Options, X-Content-Type-Options
+- **DoS Protection**: Pagination limits, connection timeouts
+- **Error Sanitization**: No sensitive information leaked in error messages
+- **HTTPS-Only**: All traffic encrypted via API Gateway
+- **DynamoDB**: NoSQL injection-safe with parameterized queries
+- **AWS IAM**: Least privilege access roles
 
-1. Clone the repository
-2. Create a feature branch
-3. Make changes
-4. Test locally
-5. Update Lambda: `zappa update production`
-6. Push to GitHub
+### Setting Up API Security
 
-## License
+1. **Generate a secure API key**:
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
 
-MIT License - Feel free to use for educational purposes
+2. **Set environment variable in AWS Lambda**:
+```bash
+zappa update production
+# Then in AWS Console: Lambda → Configuration → Environment variables
+# Add: API_KEY = your_generated_key
+```
+
+3. **Update frontend** ([docs/script.js:12](docs/script.js#L12)):
+```javascript
+const API_KEY = 'your_generated_key';
+```
+
+**WARNING**: Never commit API keys to Git. Use environment variables or build-time injection.
 
 ---
 
 Built for Western Michigan University Indonesian Students
 
 **Deployed on**: AWS Lambda (Serverless)
-**Maintained by**: Victor Tabuni (rfldn0)
-**Repository**: https://github.com/rfldn0/WMUStudentsUpdate
+**Maintained by**: Victor Tabuni
+**Private Project** - No external contributions accepted

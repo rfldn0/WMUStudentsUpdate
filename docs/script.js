@@ -7,6 +7,10 @@ const yearCustom = document.getElementById('yearCustom');
 // Backend API URL (AWS Lambda)
 const API_URL = 'https://qkfsddvd8j.execute-api.us-east-1.amazonaws.com/production';
 
+// Security: API Key (configured via environment or build process)
+// IMPORTANT: In production, inject this via a build script, not hardcoded
+const API_KEY = window.WMU_API_KEY || 'YOUR_API_KEY_HERE';
+
 // Toggle between dropdown and custom input for year
 function toggleYearInput() {
     if (yearSelect.value === 'custom') {
@@ -45,6 +49,9 @@ form.addEventListener('submit', async (e) => {
     try {
         const response = await fetch(`${API_URL}/submit`, {
             method: 'POST',
+            headers: {
+                'X-API-Key': API_KEY
+            },
             body: formData
         });
 
