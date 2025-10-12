@@ -1,103 +1,23 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from datetime import datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
-import re
-import os
-from functools import wraps
 
 app = Flask(__name__)
-
-# Security: Strict CORS - only allow your GitHub Pages domain
-CORS(app, resources={
-    r"/*": {
-        "origins": ["https://rfldn0.github.io"],
-        "methods": ["GET", "POST"],
-        "allow_headers": ["Content-Type", "X-API-Key"],
-        "max_age": 3600
-    }
-})
-
-# Security: Rate limiting to prevent DoS attacks
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
-)
-
-# Security: Request size limit (1MB)
-app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024
+CORS(app)
 
 # Configuration
 DYNAMODB_TABLE = 'wmu-students'
 REGION = 'us-east-1'
 TIMEZONE = ZoneInfo('America/Detroit')  # Eastern Time (Michigan)
 
-# Security: API Key authentication (set via environment variable)
-API_KEY = os.environ.get('API_KEY', 'CHANGE_THIS_IN_PRODUCTION')
-
 # Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb', region_name=REGION)
 table = dynamodb.Table(DYNAMODB_TABLE)
-
-# Security: Input validation patterns
-NAME_PATTERN = re.compile(r'^[a-zA-Z\s\-\.]{1,100}$')
-FIELD_PATTERN = re.compile(r'^[a-zA-Z\s\-\.&()]{1,100}$')
-YEAR_PATTERN = re.compile(r'^(Freshman|Sophomore|Junior|Senior|FALL \d{4}|SPRING \d{4}|SUMMER \d{4})?$')
-
-def require_api_key(f):
-    """Decorator to require API key for write operations"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        provided_key = request.headers.get('X-API-Key')
-        if not provided_key or provided_key != API_KEY:
-            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
-        return f(*args, **kwargs)
-    return decorated_function
-
-def validate_input(data):
-    """Validate and sanitize user input"""
-    errors = []
-
-    # Validate name
-    nama = data.get('nama', '').strip()
-    if not nama:
-        errors.append('Name is required')
-    elif len(nama) > 100:
-        errors.append('Name must be less than 100 characters')
-    elif not NAME_PATTERN.match(nama):
-        errors.append('Name contains invalid characters')
-
-    # Validate jurusan (major)
-    jurusan = data.get('jurusan', '').strip()
-    if jurusan and (len(jurusan) > 100 or not FIELD_PATTERN.match(jurusan)):
-        errors.append('Major contains invalid characters or is too long')
-
-    # Validate university
-    university = data.get('university', '').strip()
-    if university and (len(university) > 100 or not FIELD_PATTERN.match(university)):
-        errors.append('University contains invalid characters or is too long')
-
-    # Validate year
-    year = data.get('year', '').strip()
-    if year and not YEAR_PATTERN.match(year):
-        errors.append('Year format is invalid')
-
-    # Validate provinsi
-    provinsi = data.get('provinsi', '').strip()
-    valid_provinces = ['Papua', 'Papua Selatan', 'Papua Barat', 'Papua Barat Daya',
-                      'Papua Tengah', 'Papua Pegunungan', '']
-    if provinsi and provinsi not in valid_provinces:
-        errors.append('Invalid province')
-
-    return errors
 
 def decimal_to_int(obj):
     """Convert Decimal to int for JSON serialization"""
@@ -175,11 +95,6 @@ def get_next_idn():
 
 def update_or_add_student(data):
     """Update existing student or add new one"""
-    # Security: Validate input first
-    validation_errors = validate_input(data)
-    if validation_errors:
-        return {'status': 'error', 'message': '; '.join(validation_errors)}
-
     # Auto-format names to Title Case (Victor Tabuni, Computer Science)
     nama = data.get('nama', '').strip().title()
     jurusan = data.get('jurusan', '').strip().title()
@@ -259,28 +174,7 @@ def update_or_add_student(data):
     except Exception as e:
         return {'status': 'error', 'message': f'Error: {str(e)}'}
 
-@app.after_request
-def add_security_headers(response):
-    """Add security headers to all responses"""
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['Content-Security-Policy'] = "default-src 'self'"
-    return response
-
-@app.errorhandler(413)
-def request_entity_too_large(error):
-    """Handle large request payloads"""
-    return jsonify({'status': 'error', 'message': 'Request too large'}), 413
-
-@app.errorhandler(429)
-def ratelimit_handler(error):
-    """Handle rate limit exceeded"""
-    return jsonify({'status': 'error', 'message': 'Rate limit exceeded. Please try again later.'}), 429
-
 @app.route('/')
-@limiter.limit("10 per minute")
 def index():
     """Root endpoint - API information"""
     try:
@@ -292,35 +186,32 @@ def index():
             'message': 'WMU Student Update API',
             'database': 'DynamoDB',
             'total_students': total,
+            'frontend': 'https://rfldn0.github.io/WMUStudentsUpdate/',
             'endpoints': {
-                '/submit': 'POST - Submit student data (requires API key)',
-                '/api/submit': 'POST - Submit student data (alias, requires API key)',
+                '/submit': 'POST - Submit student data (form-data or JSON)',
+                '/api/submit': 'POST - Submit student data (alias)',
                 '/students': 'GET - List all students',
                 '/students/<nama>': 'GET - Get student by name'
             }
         })
-    except ClientError:
+    except ClientError as e:
         return jsonify({
             'message': 'WMU Student Update API',
             'database': 'DynamoDB',
-            'error': 'Database unavailable'
-        }), 500
+            'error': str(e)
+        })
 
 @app.route('/students', methods=['GET'])
-@limiter.limit("30 per minute")
 def list_students():
-    """List all students - limited to prevent data scraping"""
+    """List all students"""
     try:
         response = table.scan()
         students = response['Items']
 
-        # Security: Limit pagination to prevent abuse
-        page_count = 0
-        max_pages = 10
-        while 'LastEvaluatedKey' in response and page_count < max_pages:
+        # Handle pagination if there are more items
+        while 'LastEvaluatedKey' in response:
             response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             students.extend(response['Items'])
-            page_count += 1
 
         # Sort by name
         students.sort(key=lambda x: x['nama'])
@@ -335,23 +226,15 @@ def list_students():
             'data': students
         })
 
-    except ClientError:
+    except ClientError as e:
         return jsonify({
             'status': 'error',
-            'message': 'Unable to retrieve students'
+            'message': str(e)
         }), 500
 
 @app.route('/students/<nama>', methods=['GET'])
-@limiter.limit("20 per minute")
 def get_student(nama):
     """Get student by name"""
-    # Security: Validate name input
-    if not nama or len(nama) > 100:
-        return jsonify({
-            'status': 'error',
-            'message': 'Invalid name parameter'
-        }), 400
-
     student = find_student(nama)
 
     if student:
@@ -370,29 +253,15 @@ def get_student(nama):
 
 @app.route('/submit', methods=['POST'])
 @app.route('/api/submit', methods=['POST'])
-@limiter.limit("10 per hour")
-@require_api_key
 def submit():
-    """Handle form and JSON submissions - requires API key"""
+    """Handle form and JSON submissions"""
     try:
         # Accept both form-data and JSON
         data = request.get_json() if request.is_json else request.form.to_dict()
-
-        # Security: Validate content type
-        if not (request.is_json or request.content_type.startswith('multipart/form-data')):
-            return jsonify({'status': 'error', 'message': 'Invalid content type'}), 400
-
         result = update_or_add_student(data)
-
-        # Don't return 500 for validation errors
-        if result.get('status') == 'error':
-            return jsonify(result), 400
-
         return jsonify(result)
-    except Exception:
-        return jsonify({'status': 'error', 'message': 'An error occurred processing your request'}), 500
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    # Security: Disable debug mode in production
-    is_production = os.environ.get('ENVIRONMENT', 'development') == 'production'
-    app.run(debug=not is_production, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
